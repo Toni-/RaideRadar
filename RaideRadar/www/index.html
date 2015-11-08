@@ -7,6 +7,8 @@
 
     <link href="lib/ionic/css/ionic.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'">
+
     <!-- Latest compiled and minified CSS -->
                    
     <!-- IF using Sass (run gulp sass first), then uncomment below and remove the CSS includes above
@@ -14,10 +16,12 @@
     -->
 
     <!-- ionic/angularjs js -->
-    <script src="lib/ionic/js/ionic.bundle.js"></script>   
+    <script src="lib/ionic/js/ionic.bundle.js"></script>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-resource.min.js" type="text/javascript"></script>
-     <script src="lib/angular-resource/angular-resource.min.js" type="text/javascript"</script> 
+   
+
+    <!--<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-resource.min.js" type="text/javascript"></script>-->
+    <script src="lib/angular-resource/angular-resource.min.js" type="text/javascript"</script> 
 
 
     <!-- cordova script (this will be a 404 during development) -->
@@ -39,10 +43,26 @@
       </div>
       <ion-content>
 <div class="content has-header has-subheader">
-
 <div class="row">
-  <div class="col"><input type="search" class="form-control text-center" placeholder="Departure Station" ng-change="search()" ng-model="data.search"></div>
-  <div class="col"><input type="search" class="form-control text-center" placeholder="Arrival Station" ng-change="search()" ng-model="data.search"></div>
+  <div class="col text-center">Departure Station</div>
+  <div class="col text-center">Destination Station</div>
+
+
+</div>
+<div class="row">
+  <div class="col">
+ 
+    <label class="item item-input">
+      <i class="icon ion-search placeholder-icon"></i>
+      <input type="search" class="form-control text-center" placeholder="Departure Station" ng-change="searchDeparture()" ng-model="data.departure"></div>
+    </label>
+  <div class="col">
+   
+    <label class="item item-input">
+      <i class="icon ion-search placeholder-icon"></i>
+      <input type="search" class="form-control text-center" placeholder="Arrival Station" ng-change="searchDestination()" ng-model="data.destination"></i>
+    </label>
+</div>
 
 
 </div>
@@ -53,7 +73,7 @@
     
          <ion-scroll zooming="false" direction="y" style="height: 200px">
         <div class="list">
-        <li class="item" ng-repeat="station in data.stations">{{station.name}}</li>
+        <li class="item" ng-repeat="station in data.stations">{{station.stationName}}</li>
         </div>
  </ion-scroll>
       
