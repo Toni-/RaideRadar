@@ -17,11 +17,14 @@ app.run(function($ionicPlatform) {
   });
 });
 
+
+//palauttaa olion kaikista asemista
 app.factory("Stations", function($resource) {
     return $resource("http://rata.digitraffic.fi/api/v1/metadata/stations");
 });
 
 
+//filtteröi asemataulukkoa käyttäjän syötteen perusteella ja alustaa osumat matches muuttujaan
 app.factory('StationHelper', function($q, $timeout) {
 
     var searchStations = function(searchFilter) {
@@ -71,7 +74,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
         console.log($scope.stations);
     });
 
-
+//etsii asemia käyttäjän syötteen perusteella lähtöasema-tekstikenttään
   $scope.searchDeparture = function() {
 
   StationHelper.searchStations($scope.data.departure).then(
@@ -82,6 +85,8 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
     }
   )
 }
+
+//etsii asemia käyttäjän syötteen perusteella määränpää-tekstikenttään
   $scope.searchDestination = function() {
 
     StationHelper.searchStations($scope.data.destination).then(
@@ -93,19 +98,25 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
     )
   }
 
+//kutsutaan kun käyttäjä valitsee aseman listasta
   $scope.stationItemClicked = function(station) {
 
+  //valittu asema tekstikenttään
     console.log(destinationEdited);
     if(destinationEdited) {
 
+      //jos määränpää-tekstikenttää muokattiin
       $scope.data.destination = station.stationName;
+      // alustetaan valitun aseman tunnuskoodi muita rajapintapyyntöjä varten
       destinationShortCode = station.stationShortCode;
     } else {
 
+      //jos lähtöasema-tekstikenttää muokattiin
       $scope.data.departure = station.stationName;
-
+      // alustetaan valitun aseman tunnuskoodi muita rajapintapyyntöjä varten
       departureShortCode = station.stationShortCode;
     }
+    //lopetetaan editointi, jolloin lista asemista katoaa
     $scope.editingStopped = true;
     console.log("departurecode: " + departureShortCode);
 
@@ -117,6 +128,8 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
    
   }
 
+//kutsutaan kun hae junat-painiketta painetaan.
+//tekee rajapintapyynnön asemien tunnuskoodien avulla
   $scope.searchForTrains = function(station) {
 
   $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode).success(function(data) {

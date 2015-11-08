@@ -26,14 +26,15 @@
                 RaideRadar</h2>
             </div>
             <div class="bar bar-subheader has-header bar-balanced">
-                <h2 class="title">Schedule</h2>
+                <h2 class="title">Junahaku</h2>
             </div>
             <ion-content>
                 <div class="content has-header has-subheader">
                     <div class="row">
-                        <div class="col text-center">Departure Station</div>
-                        <div class="col text-center">Destination Station</div>
+                        <div class="col text-center">Mistä</div>
+                        <div class="col text-center">Mihin</div>
                     </div>
+                    <!-- tekstikentät lähtö- ja määränpääasemille -->
                     <div class="row">
                         <div class="col">
                             <label class="item item-input">
@@ -48,6 +49,8 @@
                             </label>
                         </div>
                     </div>
+
+                    <!-- lista löydetyistä asemista. piilossa ellei käyttäjä kirjoita tekstikenttiin -->
                     <div class="row">
                         <div ng-hide="editingStopped" class="col">
                             <ion-scroll zooming="false" direction="y" style="height: 200px">
@@ -57,6 +60,8 @@
                             </ion-scroll>
                         </div>
                      </div>
+
+                     <!-- painike ja lista junien hakuun. painike näkyy vain kun tekstikenttiä ei muokata -->
                      <div class="row">
                         <div class="col">
                         <button class="button button-royal ion-chevron-right" ng-show="editingStopped" ng-click="searchForTrains()">
