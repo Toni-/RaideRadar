@@ -21,6 +21,7 @@ app.factory("Stations", function($resource) {
     return $resource("http://rata.digitraffic.fi/api/v1/metadata/stations");
 });
 
+
 app.factory('StationHelper', function($q, $timeout) {
 
     var searchStations = function(searchFilter) {
@@ -56,7 +57,10 @@ app.factory('StationHelper', function($q, $timeout) {
 app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', function($scope, $http, Stations, StationHelper) {
 
   //$scope.stations = [];
-  $scope.data = { "stations" : [], "search" : '' };
+  $scope.data = { "stations" : [], "search" : '', "isDestination" : false };
+  var destinationEdited = false;
+  var departureShortCode = " ";
+  var destinationShortCode = " ";
 
   Stations.query(function(data) {
         
@@ -73,19 +77,55 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
   StationHelper.searchStations($scope.data.departure).then(
     function(matches) {
       $scope.data.stations = matches;
+      destinationEdited = false;
       console.log(matches[0].stationName)
     }
   )
 }
-$scope.searchDestination = function() {
+  $scope.searchDestination = function() {
 
-  StationHelper.searchStations($scope.data.destination).then(
-    function(matches) {
-      $scope.data.stations = matches;
-      console.log(matches[0].stationName)
+    StationHelper.searchStations($scope.data.destination).then(
+      function(matches) {
+        $scope.data.stations = matches;
+        destinationEdited = true;
+        console.log(matches[0].stationName)
+      }
+    )
+  }
+
+  $scope.stationItemClicked = function(station) {
+
+    console.log(destinationEdited);
+    if(destinationEdited) {
+
+      $scope.data.destination = station.stationName;
+      destinationShortCode = station.stationShortCode;
+    } else {
+
+      $scope.data.departure = station.stationName;
+
+      departureShortCode = station.stationShortCode;
     }
-  )
-}
+    $scope.editingStopped = true;
+    console.log("departurecode: " + departureShortCode);
+
+    console.log("destinationcode: " + destinationShortCode);
+  }
+
+  $scope.editingStarted = function(station) {
+  $scope.editingStopped = false;
+   
+  }
+
+  $scope.searchForTrains = function(station) {
+
+  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode).success(function(data) {
+    $scope.data.trains = data;
+    console.log(data)
+  });
+
+   
+  }
 
 
 }]);
