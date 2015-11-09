@@ -17,6 +17,8 @@ app.run(function($ionicPlatform) {
   });
 });
 
+
+// Tab functionality
 app.config(function($stateProvider, $urlRouterProvider) {
 
   $stateProvider
