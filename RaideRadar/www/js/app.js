@@ -18,6 +18,47 @@ app.run(function($ionicPlatform) {
 });
 
 
+// Tab functionality
+app.config(function($stateProvider, $urlRouterProvider) {
+
+  $stateProvider
+    .state('tabs', {
+      url: "/tab",
+      abstract: true,
+      templateUrl: "templates/tabs.html"
+    })
+    .state('tabs.home', {
+      url: "/home",
+      views: {
+        'home-tab': {
+          templateUrl: "templates/home.html",
+          controller: 'ScheduleCtrl'
+        }
+      }
+    })
+    .state('tabs.about', {
+      url: "/about",
+      views: {
+        'about-tab': {
+          templateUrl: "templates/about.html"
+        }
+      }
+    })
+    .state('tabs.contact', {
+      url: "/contact",
+      views: {
+        'contact-tab': {
+          templateUrl: "templates/contact.html"
+        }
+      }
+    });
+
+
+   $urlRouterProvider.otherwise("/tab/home");
+
+});
+
+
 //palauttaa olion kaikista asemista
 app.factory("Stations", function($resource) {
     return $resource("http://rata.digitraffic.fi/api/v1/metadata/stations");
