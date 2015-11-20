@@ -2,7 +2,7 @@ var stations = []
 
 console.log(stations);
 
-var app = angular.module('radar', ['ionic', 'ngResource']);
+var app = angular.module('radar', ['ionic', 'ngResource', 'ngCordova']);
 
 app.run(function($ionicPlatform) {
   $ionicPlatform.ready(function() {
@@ -40,7 +40,8 @@ app.config(function($stateProvider, $urlRouterProvider) {
       url: "/about",
       views: {
         'about-tab': {
-          templateUrl: "templates/about.html"
+          templateUrl: "templates/about.html",
+          controller: "MapCtrl"
         }
       }
     })
@@ -98,6 +99,58 @@ app.factory('StationHelper', function($q, $timeout) {
     }
 })
 
+// Map Controller
+app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation) {
+  var options = { timeout: 10000, enableHighAccuracy: true };
+ 
+  $cordovaGeolocation.getCurrentPosition(options).then(function(position){
+ 
+    var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+ 
+    var mapOptions = {
+      center: latLng,
+      zoom: 9,
+      streetViewControl: false,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+ 
+    $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+    
+        var markers = [];
+    for (var i = 0; i < 100; i++) {
+      var location = stations[i];
+      console.log(location);
+      var latLng = new google.maps.LatLng(location.latitude,
+          location.longitude);
+      var marker = new google.maps.Marker({
+         position: latLng,
+         //map: map,
+         draggable:false,
+         title:"shot"
+      });
+      //markers.push(marker);
+      marker.setMap($scope.map);
+    }
+    //var markerCluster = new MarkerClusterer(map, markers);
+  
+
+  }, function(error){
+    console.log("Could not get location");
+  });
+});
+/*
+$scope.show = function() {
+  $ionicLoading.show({
+    template: 'Lataa...'
+  });
+}
+
+$scope.hide = function(){
+  $ionicLoading.hide();
+}
+*/
+
+// Schedule Controller
 app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', function($scope, $http, Stations, StationHelper) {
 
   //$scope.stations = [];
