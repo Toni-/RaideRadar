@@ -1,5 +1,6 @@
 var stations = []
-
+var info     = "";
+var info2    = "";
 console.log(stations);
 
 var app = angular.module('radar', ['ionic', 'ngResource', 'ngCordova']);
@@ -86,7 +87,7 @@ app.factory('StationHelper', function($q, $timeout) {
         
            deferred.resolve( matches );
 
-        }, 100);
+        }, 0);
 
         return deferred.promise;
 
@@ -116,28 +117,69 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation) {
  
     $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
     
-        var markers = [];
-    for (var i = 0; i < 100; i++) {
-      var location = stations[i];
-      console.log(location);
-      var latLng = new google.maps.LatLng(location.latitude,
-          location.longitude);
-      var marker = new google.maps.Marker({
-         position: latLng,
-         //map: map,
-         draggable:false,
-         title:"shot"
-      });
-      //markers.push(marker);
-      marker.setMap($scope.map);
-    }
-    //var markerCluster = new MarkerClusterer(map, markers);
+    var markers = [];
+
+    // Add marker to every passanger traffic station
+    for (var i = 0; i < stations.length; i++) {
+      if (stations[i].passengerTraffic == true) {
+        var location = stations[i];
+        console.log(location);
+        var latLng = new google.maps.LatLng(location.latitude,
+            location.longitude);
+        var marker = new google.maps.Marker({
+           position: latLng,
+           //map: map,
+           draggable:false,
+           title: location.stationName
+        });
+        markers.push(marker);
+        marker.setMap($scope.map);
   
+        markerInfo(marker, stations[i].stationShortCode, stations[i].stationName);
+      }
+    }
+
+
+    //var markerCluster = new MarkerClusterer(map, markers);
 
   }, function(error){
     console.log("Could not get location");
   });
 });
+
+function markerInfo(marker, shortCode, stationName) {
+  var infowindow = new google.maps.InfoWindow({
+    content: shortCode + " - " + stationName
+  });
+//http://rata.digitraffic.fi/api/v1/live-trains?station=HKI
+  marker.addListener('click', function() {
+    var selectedStation = getStation(marker, shortCode);
+    infowindow.open(marker.get('map'), marker);
+
+  });
+}
+
+// Get stations and pass the info to the selected marker
+function getStation(marker, shortCode) {
+    var xmlHttp = new XMLHttpRequest();
+
+    xmlHttp.onreadystatechange = function() { 
+      if (xmlHttp.readyState == 4 && xmlHttp.status == 200) 
+        var responseData = JSON.parse(xmlHttp.responseText);
+        console.log(responseData);
+        console.log("foakkofokfakoafkoaf");
+        console.log(responseData[0]);
+        markerInfo(marker, responseData[0].operatorShortCode, responseData[0].trainCategory);
+    }
+
+    xmlHttp.open("GET", 
+      "http://rata.digitraffic.fi/api/v1/live-trains?station=" + 
+      shortCode + "&arrived_trains=4&arriving_trains=4&departed_trains=4&departing_trains=4", 
+      true);  
+    xmlHttp.send(null);
+}
+
+
 /*
 $scope.show = function() {
   $ionicLoading.show({
