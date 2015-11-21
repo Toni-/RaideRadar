@@ -1,8 +1,9 @@
-var stations = []
+var stations        = [];
+var selectedStation = {};
 
 console.log(stations);
 
-var app = angular.module('radar', ['ionic', 'ngResource']);
+var app = angular.module('radar', ['ionic', 'ngResource', 'ngCordova']);
 
 app.run(function($ionicPlatform) {
   $ionicPlatform.ready(function() {
@@ -40,7 +41,8 @@ app.config(function($stateProvider, $urlRouterProvider) {
       url: "/about",
       views: {
         'about-tab': {
-          templateUrl: "templates/about.html"
+          templateUrl: "templates/about.html",
+          controller: "MapCtrl"
         }
       }
     })
@@ -85,7 +87,7 @@ app.factory('StationHelper', function($q, $timeout) {
         
            deferred.resolve( matches );
 
-        }, 100);
+        }, 0);
 
         return deferred.promise;
 
@@ -98,6 +100,139 @@ app.factory('StationHelper', function($q, $timeout) {
     }
 })
 
+// Map Controller
+app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation) {
+  var options = { timeout: 10000, enableHighAccuracy: true };
+ 
+  $cordovaGeolocation.getCurrentPosition(options).then(function(position){
+ 
+    var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+ 
+    var mapOptions = {
+      center: latLng,
+      zoom: 9,
+      streetViewControl: false,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+ 
+    $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+    
+    var markers = [];
+
+    // Add marker to every passanger traffic station
+    for (var i = 0; i < stations.length; i++) {
+      if (stations[i].passengerTraffic == true) {
+        var location = stations[i];
+        console.log(location);
+        var latLng = new google.maps.LatLng(location.latitude,
+            location.longitude);
+        var marker = new google.maps.Marker({
+           position: latLng,
+           //map: map,
+           draggable:false,
+           title: location.stationName
+        });
+        markers.push(marker);
+        marker.setMap($scope.map);
+  
+        markerInfo(marker, stations[i].stationShortCode, stations[i].stationName);
+      }
+    }
+
+  }, function(error){
+    console.log("Could not get location");
+  });
+});
+
+function markerInfo(marker, shortCode, stationName) {
+  var infowindow = new google.maps.InfoWindow({
+      disableAutoPan: false,
+      content: "<div id='markerContent'>  </div>"
+  });
+
+//http://rata.digitraffic.fi/api/v1/live-trains?station=HKI
+  marker.addListener('click', function() {
+    console.log("Asema lyhenne " + shortCode);
+    infowindow.close();
+    getStation(marker, shortCode, stationName);
+    infowindow.open(marker.get('map'), marker);
+    //infowindow.setContent();
+  });
+}
+
+// Get stations and pass the info to the selected marker
+function getStation(marker, shortCode, stationName) {
+    var xmlHttp = new XMLHttpRequest();
+
+    xmlHttp.onreadystatechange = function() { 
+      if (xmlHttp.readyState == 4 && xmlHttp.status == 200) 
+        var responseData = JSON.parse(xmlHttp.responseText);
+        selectedStation = responseData;
+        //console.log(responseData);
+        //console.log(responseData[0]);
+        setInfoMarkerText(shortCode, stationName);
+    }
+
+    xmlHttp.open("GET", 
+      "http://rata.digitraffic.fi/api/v1/live-trains?station=" + 
+      shortCode + "&arrived_trains=5&arriving_trains=5&departed_trains=5&departing_trains=5", 
+      true);  
+    xmlHttp.send(null);
+}
+
+// Parse station data and display the information
+function setInfoMarkerText(shortCode, stationName) {
+  var outputHTML = "";
+  console.log("asemien määrä " + selectedStation.length);
+
+  // Iterate through all the trains going through the selected station
+  for (var train = 0; train < selectedStation.length; train++) {
+      if (selectedStation[train].trainCategory == "Long-distance" ||
+          selectedStation[train].trainCategory == "Commuter" ) {
+          outputHTML += "<table class='pure-table'><caption><b>" + selectedStation[train].trainType + " " + 
+                                      selectedStation[train].trainNumber + "<b></caption>" +
+                 "<thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>"
+          if (typeof selectedStation[train] != 'undefined' || selectedStation[train] != null) {
+            for (var station = 0; station < selectedStation[train].timeTableRows.length; station++) {
+                if (selectedStation[train].timeTableRows[station].stationShortCode == shortCode) {
+
+                  if (selectedStation[train].timeTableRows[station].type == "ARRIVAL") {
+
+                      outputHTML += "<tr>";
+                      var time = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
+                      var hours = time.getHours().toString().length   == 1 
+                          ? "0" + time.getHours().toString()   : time.getHours();
+                      var mins  = time.getMinutes().toString().length == 1 
+                          ? "0" + time.getMinutes().toString() : time.getMinutes();
+                      outputHTML += "<td>" + hours + ":"  + mins + "</td>";     
+                  }
+
+                  outputHTML += station == 0 ? "<tr><td>Lähtöasema</td>" : "";
+
+                  outputHTML += selectedStation[train].timeTableRows.length-1 == station ? "<td>Pääteasema</td></tr>" : "";
+
+                  if (selectedStation[train].timeTableRows[station].type == "DEPARTURE") {
+
+                      var time = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
+                      var hours = time.getHours().toString().length   == 1 
+                          ? "0" + time.getHours().toString()   : time.getHours();
+                      var mins  = time.getMinutes().toString().length == 1 
+                          ? "0" + time.getMinutes().toString() : time.getMinutes();
+                      outputHTML += "<td>" + hours + ":"  + mins + "</td>";                     
+                      outputHTML += "</tr>";
+                  }
+                  
+               }
+            }
+          }
+      }
+  }
+
+  outputHTML += "</tbody>";
+  document.getElementById("markerContent").innerHTML = "<h4>" + stationName + "</h4>" + "<br>" + outputHTML; 
+}
+
+// Schedule Controller
 app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', function($scope, $http, Stations, StationHelper) {
 
   //$scope.stations = [];
