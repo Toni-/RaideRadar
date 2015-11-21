@@ -139,9 +139,6 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation) {
       }
     }
 
-
-    //var markerCluster = new MarkerClusterer(map, markers);
-
   }, function(error){
     console.log("Could not get location");
   });
@@ -149,20 +146,22 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation) {
 
 function markerInfo(marker, shortCode, stationName) {
   var infowindow = new google.maps.InfoWindow({
+      disableAutoPan: false,
       content: "<div id='markerContent'>  </div>"
   });
 
 //http://rata.digitraffic.fi/api/v1/live-trains?station=HKI
   marker.addListener('click', function() {
-    console.log(shortCode);
-    getStation(marker, shortCode);
+    console.log("Asema lyhenne " + shortCode);
+    infowindow.close();
+    getStation(marker, shortCode, stationName);
     infowindow.open(marker.get('map'), marker);
     //infowindow.setContent();
   });
 }
 
 // Get stations and pass the info to the selected marker
-function getStation(marker, shortCode) {
+function getStation(marker, shortCode, stationName) {
     var xmlHttp = new XMLHttpRequest();
 
     xmlHttp.onreadystatechange = function() { 
@@ -170,51 +169,68 @@ function getStation(marker, shortCode) {
         var responseData = JSON.parse(xmlHttp.responseText);
         selectedStation = responseData;
         //console.log(responseData);
-        console.log(responseData[0]);
-        setInfoMarkerText(shortCode);
+        //console.log(responseData[0]);
+        setInfoMarkerText(shortCode, stationName);
     }
 
     xmlHttp.open("GET", 
       "http://rata.digitraffic.fi/api/v1/live-trains?station=" + 
-      shortCode + "&arrived_trains=4&arriving_trains=4&departed_trains=4&departing_trains=4", 
+      shortCode + "&arrived_trains=5&arriving_trains=5&departed_trains=5&departing_trains=5", 
       true);  
     xmlHttp.send(null);
 }
 
-function setInfoMarkerText(shortCode) {
-  var str;
-  for (var i = 0; i < selectedStation.length; i++) {
-      if (selectedStation[i].trainCategory == "Long-distance" ||
-          selectedStation[i].trainCategory == "Commuter" ) {
-          console.log("stati len " + selectedStation.length);
-          if (typeof selectedStation[i] != 'undefined' || selectedStation[i] != null) {
-            for (var k = 0; k < selectedStation[i].timeTableRows.length; k++) {
-                if (selectedStation[i].timeTableRows[k].stationShortCode == shortCode) {
-                    str += "<br>" + selectedStation[i].timeTableRows[k].type + " - " + 
-                    selectedStation[i].timeTableRows[k].scheduledTime + " - " +
-                    selectedStation[i].timeTableRows[k].actualTime + 
-                    selectedStation[i].trainNumber + "</br>"; 
-                }
+// Parse station data and display the information
+function setInfoMarkerText(shortCode, stationName) {
+  var outputHTML = "";
+  console.log("asemien määrä " + selectedStation.length);
+
+  // Iterate through all the trains going through the selected station
+  for (var train = 0; train < selectedStation.length; train++) {
+      if (selectedStation[train].trainCategory == "Long-distance" ||
+          selectedStation[train].trainCategory == "Commuter" ) {
+          outputHTML += "<table class='pure-table'><caption><b>" + selectedStation[train].trainType + " " + 
+                                      selectedStation[train].trainNumber + "<b></caption>" +
+                 "<thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>"
+          if (typeof selectedStation[train] != 'undefined' || selectedStation[train] != null) {
+            for (var station = 0; station < selectedStation[train].timeTableRows.length; station++) {
+                if (selectedStation[train].timeTableRows[station].stationShortCode == shortCode) {
+
+                  if (selectedStation[train].timeTableRows[station].type == "ARRIVAL") {
+
+                      outputHTML += "<tr>";
+                      var time = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
+                      var hours = time.getHours().toString().length   == 1 
+                          ? "0" + time.getHours().toString()   : time.getHours();
+                      var mins  = time.getMinutes().toString().length == 1 
+                          ? "0" + time.getMinutes().toString() : time.getMinutes();
+                      outputHTML += "<td>" + hours + ":"  + mins + "</td>";     
+                  }
+
+                  outputHTML += station == 0 ? "<tr><td>Lähtöasema</td>" : "";
+
+                  outputHTML += selectedStation[train].timeTableRows.length-1 == station ? "<td>Pääteasema</td></tr>" : "";
+
+                  if (selectedStation[train].timeTableRows[station].type == "DEPARTURE") {
+
+                      var time = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
+                      var hours = time.getHours().toString().length   == 1 
+                          ? "0" + time.getHours().toString()   : time.getHours();
+                      var mins  = time.getMinutes().toString().length == 1 
+                          ? "0" + time.getMinutes().toString() : time.getMinutes();
+                      outputHTML += "<td>" + hours + ":"  + mins + "</td>";                     
+                      outputHTML += "</tr>";
+                  }
+                  
+               }
             }
           }
       }
   }
 
-  document.getElementById("markerContent").innerHTML = "Saapuvat Junat: " + str; 
+  outputHTML += "</tbody>";
+  document.getElementById("markerContent").innerHTML = "<h4>" + stationName + "</h4>" + "<br>" + outputHTML; 
 }
-
-
-/*
-$scope.show = function() {
-  $ionicLoading.show({
-    template: 'Lataa...'
-  });
-}
-
-$scope.hide = function(){
-  $ionicLoading.hide();
-}
-*/
 
 // Schedule Controller
 app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', function($scope, $http, Stations, StationHelper) {

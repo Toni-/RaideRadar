@@ -1,11 +1,16 @@
 #map {
   width: 100%;
   height: 100%;
-  border: solid 2px red;  
 }
 
 .scroll {
   height: 100%;
 }
 
+#markerContent {
+    
+}
 
+h4 {
+	text-align: center;
+}
