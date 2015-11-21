@@ -1,6 +1,6 @@
-var stations = []
-var info     = "";
-var info2    = "";
+var stations        = [];
+var selectedStation = {};
+
 console.log(stations);
 
 var app = angular.module('radar', ['ionic', 'ngResource', 'ngCordova']);
@@ -149,13 +149,15 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation) {
 
 function markerInfo(marker, shortCode, stationName) {
   var infowindow = new google.maps.InfoWindow({
-    content: shortCode + " - " + stationName
+      content: "<div id='markerContent'>  </div>"
   });
+
 //http://rata.digitraffic.fi/api/v1/live-trains?station=HKI
   marker.addListener('click', function() {
-    var selectedStation = getStation(marker, shortCode);
+    console.log(shortCode);
+    getStation(marker, shortCode);
     infowindow.open(marker.get('map'), marker);
-
+    //infowindow.setContent();
   });
 }
 
@@ -166,10 +168,10 @@ function getStation(marker, shortCode) {
     xmlHttp.onreadystatechange = function() { 
       if (xmlHttp.readyState == 4 && xmlHttp.status == 200) 
         var responseData = JSON.parse(xmlHttp.responseText);
-        console.log(responseData);
-        console.log("foakkofokfakoafkoaf");
+        selectedStation = responseData;
+        //console.log(responseData);
         console.log(responseData[0]);
-        markerInfo(marker, responseData[0].operatorShortCode, responseData[0].trainCategory);
+        setInfoMarkerText(shortCode);
     }
 
     xmlHttp.open("GET", 
@@ -177,6 +179,28 @@ function getStation(marker, shortCode) {
       shortCode + "&arrived_trains=4&arriving_trains=4&departed_trains=4&departing_trains=4", 
       true);  
     xmlHttp.send(null);
+}
+
+function setInfoMarkerText(shortCode) {
+  var str;
+  for (var i = 0; i < selectedStation.length; i++) {
+      if (selectedStation[i].trainCategory == "Long-distance" ||
+          selectedStation[i].trainCategory == "Commuter" ) {
+          console.log("stati len " + selectedStation.length);
+          if (typeof selectedStation[i] != 'undefined' || selectedStation[i] != null) {
+            for (var k = 0; k < selectedStation[i].timeTableRows.length; k++) {
+                if (selectedStation[i].timeTableRows[k].stationShortCode == shortCode) {
+                    str += "<br>" + selectedStation[i].timeTableRows[k].type + " - " + 
+                    selectedStation[i].timeTableRows[k].scheduledTime + " - " +
+                    selectedStation[i].timeTableRows[k].actualTime + 
+                    selectedStation[i].trainNumber + "</br>"; 
+                }
+            }
+          }
+      }
+  }
+
+  document.getElementById("markerContent").innerHTML = "Saapuvat Junat: " + str; 
 }
 
 
