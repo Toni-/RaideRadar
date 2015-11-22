@@ -25,7 +25,7 @@
     <body ng-app="radar">
 
 <!-- Back button -->
-  <ion-nav-bar class="bar-positive">
+  <ion-nav-bar class="bar-royal">
     <ion-nav-back-button>
     </ion-nav-back-button>
   </ion-nav-bar>
@@ -34,7 +34,7 @@
 
 <!-- Tabs -->
   <script id="templates/tabs.html" type="text/ng-template">
-    <ion-tabs class="tabs-icon-top tabs-positive">
+    <ion-tabs class="tabs-icon-top tabs-royal">
 
       <ion-tab title="Junahaku" icon="ion-home" href="#/tab/home">
         <ion-nav-view name="home-tab"></ion-nav-view>
@@ -95,7 +95,7 @@
                         </button>
                         <ion-scroll zooming="false" direction="y" style="height: 700px">
                             <div class="list">
-                                <li class="item" ng-repeat="train in data.trains" ng-click="trainClicked({{train}})"> <a class="button icon icon-right ion-chevron-right" href="#/tab/details">{{train.trainType}}{{train.trainNumber}}</a></li>
+                                <li class="item" ng-repeat="train in data.trains" ng-click="trainClicked({{train}})"> <a class="button icon icon-right ion-chevron-right" href="#/tab/details">{{train.trainType}}{{train.trainNumber}}  {{train.depTime}} - {{train.desTime}}</a></li>
                             </div>
                         </ion-scroll>
                         </div>
@@ -107,13 +107,13 @@
   </script>
 
   <script id="templates/details.html" type="text/ng-template">
-      <ion-view view-title="Also Factual">
+      <ion-view view-title="Junan tiedot">
         <ion-content class="padding">
-          <h1 id="route">{{depStation}} </h1>
-          <h3 id="depTime"></h3>
-          <h3 id="desTime"></h3>
-          <h2 id="isOnRoute"></h2>
-          <p>osdfijfoisdjfiosdfjosidjsoifjdsiofjsiod</p>
+        <div id="route"></div>
+         
+          <div id="depTime"></div>
+          <div id="desTime"></div>
+          <div id="isOnRoute"></div>
           <p>
             <a class="button icon ion-chevron-left" href="#/tab/home"> Takaisin</a>
           </p>

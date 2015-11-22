@@ -279,10 +279,16 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
   var departureShortCode = " ";
   var destinationShortCode = " ";
 
+
+    console.log(document)
+
+    console.log("scope: documetn! " + $scope.document)
+
+
   Stations.query(function(data) {
         
-        for(value in data) {
-            stations[value] = (data[value]);
+        for(var i = 0; i<data.length; i = i +1) {
+            stations[i] = (data[i]);
         }
 
         console.log($scope.stations);
@@ -315,23 +321,28 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
   $scope.trainClicked = function(train) {
 
     console.log(train);
+    console.log(document)
+    console.log(document.getElementById("route"))
 
-   $scope.depStation = $scope.data.departureShortCode
-   $scope.test1 = document.getElementById("depStation").value
-   document.getElementById("route").innerHTML = 
-   (document.getElementById("depStation").value + ' - ' + document.getElementById("desStation").value)
+// odottaa että tabin html-template on latautunut,
+// jonka jälkeen asettaa junan tiedot html-tiedostoon
+    function waitForTabLoading() {
+      if(document.getElementById("route")==null) {//we want it to match
+        setTimeout(waitForTabLoading, 50);//wait 50 millisecnds then recheck
+        return;
+    }
 
-   console.log("swag:" + destinationShortCode);
+    console.log("swag:" + destinationShortCode);
 
-   for(station in train.timeTableRows) {
-    if(train.timeTableRows[station].stationShortCode == departureShortCode && train.timeTableRows[station].type =="DEPARTURE") {
-      console.log("lähtöaika: " + train.timeTableRows[station].scheduledTime)
+   for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
+    if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
+      console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
       document.getElementById("depTime").innerHTML =
-      "Lähtöaika: " + formatDateToString(train.timeTableRows[station].scheduledTime);
-    } else if (train.timeTableRows[station].stationShortCode == destinationShortCode && train.timeTableRows[station].type =="ARRIVAL") { 
-      console.log("saapumisaika: " + train.timeTableRows[station].scheduledTime)
+      "<h2>Lähtöaika: </h2><h1>" + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1>';
+    } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") { 
+      console.log("saapumisaika: " + train.timeTableRows[i].scheduledTime)
       document.getElementById("desTime").innerHTML =
-      "Saapumisaika: " + formatDateToString(train.timeTableRows[station].scheduledTime);    
+      "Saapumisaika: " + formatDateToString(train.timeTableRows[i].scheduledTime);    
    }
 
    if(train.runningCurrently) {
@@ -340,10 +351,12 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
     document.getElementById("isOnRoute").innerHTML = "Juna ei ole liikkeellä"
    }
 
-
-
-  
   }
+
+  }
+
+  waitForTabLoading();
+
 }
 
 
@@ -382,13 +395,27 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
 //tekee rajapintapyynnön asemien tunnuskoodien avulla
   $scope.searchForTrains = function(station) {
 
-  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode).success(function(data) {
+  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + '&limit=8').success(function(data) {
     $scope.data.trains = data;
     console.log(data)
-  });
 
-   
-  }
+    for(var j = 0;j<$scope.data.trains.length;j = j +1) {
+
+
+      for(var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
+        if($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type =="DEPARTURE") {
+          console.log("lähtöaika: " + $scope.data.trains[j].timeTableRows[i].scheduledTime)
+
+          $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
+
+        } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type =="ARRIVAL") {
+
+          $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime); 
+        }
+      }
+    }
+  });
+}
 
 
 }]);
