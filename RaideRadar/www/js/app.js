@@ -327,31 +327,40 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
 // odottaa että tabin html-template on latautunut,
 // jonka jälkeen asettaa junan tiedot html-tiedostoon
     function waitForTabLoading() {
-      if(document.getElementById("route")==null) {//we want it to match
+      if(document.getElementById("timeInfo")==null) {//we want it to match
         setTimeout(waitForTabLoading, 50);//wait 50 millisecnds then recheck
         return;
     }
 
     console.log("swag:" + destinationShortCode);
+    var detailHTML = '<div class="row">'
+    for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
+    
+      if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
+        console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
 
-   for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
-    if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
-      console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
-      document.getElementById("depTime").innerHTML =
-      "<h2>Lähtöaika: </h2><h1>" + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1>';
-    } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") { 
-      console.log("saapumisaika: " + train.timeTableRows[i].scheduledTime)
-      document.getElementById("desTime").innerHTML =
-      "Saapumisaika: " + formatDateToString(train.timeTableRows[i].scheduledTime);    
+        detailHTML = detailHTML + '<div class="col"><h3>Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
+
+      } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") { 
+        console.log("saapumisaika: " + train.timeTableRows[i].scheduledTime)
+        console.log("vanha" + detailHTML)
+
+        detailHTML = detailHTML + '<div class="col"><h3>Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
+        
+        console.log("uus:" + detailHTML)
    }
 
+   
+
    if(train.runningCurrently) {
-    document.getElementById("isOnRoute").innerHTML = "Juna on liikkeellä"
+    document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna on liikkeellä</h3>"
    } else {
-    document.getElementById("isOnRoute").innerHTML = "Juna ei ole liikkeellä"
+    document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna ei ole liikkeellä</h3>"
    }
 
   }
+
+  document.getElementById("timeInfo").innerHTML = detailHTML + '</div>'
 
   }
 
