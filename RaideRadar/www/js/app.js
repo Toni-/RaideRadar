@@ -183,53 +183,82 @@ function getStation(marker, shortCode, stationName) {
 // Parse station data and display the information
 function setInfoMarkerText(shortCode, stationName) {
   var outputHTML = "";
+  var outputArr  = [];
+
   console.log("asemien määrä " + selectedStation.length);
 
   // Iterate through all the trains going through the selected station
+  // The outer loop iterates through trains and the inner loop iterates through the stations
+  // that are on the trains path
   for (var train = 0; train < selectedStation.length; train++) {
       if (selectedStation[train].trainCategory == "Long-distance" ||
           selectedStation[train].trainCategory == "Commuter" ) {
-          outputHTML += "<table class='pure-table'><caption><b>" + selectedStation[train].trainType + " " + 
+          var temp = "";
+          temp    += "<table class='pure-table'><caption><b>" + selectedStation[train].trainType + " " + 
                                       selectedStation[train].trainNumber + "<b></caption>" +
                  "<thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>"
           if (typeof selectedStation[train] != 'undefined' || selectedStation[train] != null) {
             for (var station = 0; station < selectedStation[train].timeTableRows.length; station++) {
                 if (selectedStation[train].timeTableRows[station].stationShortCode == shortCode) {
-
+                  var depTime;
+                  var arrTime;
+                  console.log("juna " + selectedStation[train].trainNumber + " - " + selectedStation[train].timeTableRows[station].type);
                   if (selectedStation[train].timeTableRows[station].type == "ARRIVAL") {
 
-                      outputHTML += "<tr>";
-                      var time = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
+                      temp += "<tr>";
+                      var time  = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
+                      arrTime   = time;
                       var hours = time.getHours().toString().length   == 1 
                           ? "0" + time.getHours().toString()   : time.getHours();
                       var mins  = time.getMinutes().toString().length == 1 
                           ? "0" + time.getMinutes().toString() : time.getMinutes();
-                      outputHTML += "<td>" + hours + ":"  + mins + "</td>";     
+                      temp += "<td>" + hours + ":"  + mins + "</td>";     
                   }
 
-                  outputHTML += station == 0 ? "<tr><td>Lähtöasema</td>" : "";
+                  temp += station == 0 ? "<tr><td>Lähtöasema</td>" : "";
 
-                  outputHTML += selectedStation[train].timeTableRows.length-1 == station ? "<td>Pääteasema</td></tr>" : "";
+                  temp += selectedStation[train].timeTableRows.length-1 == station ? "<td>Pääteasema</td></tr>" : "";
 
                   if (selectedStation[train].timeTableRows[station].type == "DEPARTURE") {
-
-                      var time = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
+                      outputArr.splice(outputArr.length-1, 1);
+                      var time  = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
+                      depTime   = time;
                       var hours = time.getHours().toString().length   == 1 
                           ? "0" + time.getHours().toString()   : time.getHours();
                       var mins  = time.getMinutes().toString().length == 1 
                           ? "0" + time.getMinutes().toString() : time.getMinutes();
-                      outputHTML += "<td>" + hours + ":"  + mins + "</td>";                     
-                      outputHTML += "</tr>";
+                      temp += "<td>" + hours + ":"  + mins + "</td>";                     
+                      temp += "</tr>";
                   }
+
+                  var time = arrTime == 'undefined' ? depTime : arrTime;
+                  outputArr.push({"time": time, "tableRow": temp});
                   
                }
             }
           }
       }
   }
+  console.log("enne - " + outputArr);
+  outputArr.sort(sortOutput);
+  console.log("jälke - " + outputArr);
+  for (var i = 0; i < outputArr.length; i++) {
+    outputHTML += outputArr[i].tableRow;
+    console.log(outputArr[i].time);
+  }
 
-  outputHTML += "</tbody>";
+  outputHTML += "</tbody><br>";
   document.getElementById("markerContent").innerHTML = "<h4>" + stationName + "</h4>" + "<br>" + outputHTML; 
+}
+
+function sortOutput(a, b) {
+  if (a.time > b.time) {
+    return 1;
+  }
+  if (a.time < b.time) {
+    return -1;
+  }
+  return 0;
 }
 
 // Schedule Controller
