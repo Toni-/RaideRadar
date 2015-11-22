@@ -55,7 +55,7 @@
   <script id="templates/home.html" type="text/ng-template">
         <ion-view view-title="Junahaku">
             <ion-content>
-                <div class="content has-header has-subheader">
+                <div class="content">
                     <div class="row">
                         <div class="col text-center">Mistä</div>
                         <div class="col text-center">Mihin</div>
@@ -65,13 +65,13 @@
                         <div class="col">
                             <label class="item item-input">
                             <i class="icon ion-search placeholder-icon"></i>
-                            <input type="search" class="form-control text-center" placeholder="Departure Station" ng-focus="editingStarted()" ng-change="searchDeparture()" ng-model="data.departure">
+                            <input type="search" class="form-control text-center" id="depStation" placeholder="Departure Station" ng-focus="editingStarted()" ng-change="searchDeparture()" ng-model="data.departure">
                         </div>
                         </label>
                         <div class="col">
                             <label class="item item-input">
                             <i class="icon ion-search placeholder-icon"></i>
-                            <input type="search" class="form-control text-center" placeholder="Arrival Station" ng-focus="editingStarted()" ng-change="searchDestination()" ng-model="data.destination"></i>
+                            <input type="search" class="form-control text-center" id="desStation" placeholder="Arrival Station" ng-focus="editingStarted()" ng-change="searchDestination()" ng-model="data.destination"></i>
                             </label>
                         </div>
                     </div>
@@ -95,7 +95,7 @@
                         </button>
                         <ion-scroll zooming="false" direction="y" style="height: 700px">
                             <div class="list">
-                                <li class="item" ng-repeat="train in data.trains">{{train.trainType}}{{train.trainNumber}}</li>
+                                <li class="item" ng-repeat="train in data.trains" ng-click="trainClicked({{train}})"> <a class="button icon icon-right ion-chevron-right" href="#/tab/details">{{train.trainType}}{{train.trainNumber}}</a></li>
                             </div>
                         </ion-scroll>
                         </div>
@@ -105,6 +105,21 @@
             </ion-content>
         </ion-view>
   </script>
+
+  <script id="templates/details.html" type="text/ng-template">
+      <ion-view view-title="Also Factual">
+        <ion-content class="padding">
+          <h1 id="route">{{depStation}} </h1>
+          <h3 id="depTime"></h3>
+          <h3 id="desTime"></h3>
+          <h2 id="isOnRoute"></h2>
+          <p>osdfijfoisdjfiosdfjosidjsoifjdsiofjsiod</p>
+          <p>
+            <a class="button icon ion-chevron-left" href="#/tab/home"> Takaisin</a>
+          </p>
+        </ion-content>
+      </ion-view>
+    </script>
 
  
 

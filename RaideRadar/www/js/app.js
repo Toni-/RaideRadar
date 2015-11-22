@@ -37,6 +37,15 @@ app.config(function($stateProvider, $urlRouterProvider) {
         }
       }
     })
+    .state('tabs.details', {
+      url: "/details",
+      views: {
+        'home-tab': {
+          templateUrl: "templates/details.html",
+          controller: 'ScheduleCtrl'
+        }
+      }
+    })
     .state('tabs.about', {
       url: "/about",
       views: {
@@ -303,6 +312,42 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
     )
   }
 
+  $scope.trainClicked = function(train) {
+
+    console.log(train);
+
+   $scope.depStation = $scope.data.departureShortCode
+   $scope.test1 = document.getElementById("depStation").value
+   document.getElementById("route").innerHTML = 
+   (document.getElementById("depStation").value + ' - ' + document.getElementById("desStation").value)
+
+   console.log("swag:" + destinationShortCode);
+
+   for(station in train.timeTableRows) {
+    if(train.timeTableRows[station].stationShortCode == departureShortCode && train.timeTableRows[station].type =="DEPARTURE") {
+      console.log("lähtöaika: " + train.timeTableRows[station].scheduledTime)
+      document.getElementById("depTime").innerHTML =
+      "Lähtöaika: " + formatDateToString(train.timeTableRows[station].scheduledTime);
+    } else if (train.timeTableRows[station].stationShortCode == destinationShortCode && train.timeTableRows[station].type =="ARRIVAL") { 
+      console.log("saapumisaika: " + train.timeTableRows[station].scheduledTime)
+      document.getElementById("desTime").innerHTML =
+      "Saapumisaika: " + formatDateToString(train.timeTableRows[station].scheduledTime);    
+   }
+
+   if(train.runningCurrently) {
+    document.getElementById("isOnRoute").innerHTML = "Juna on liikkeellä"
+   } else {
+    document.getElementById("isOnRoute").innerHTML = "Juna ei ole liikkeellä"
+   }
+
+
+
+  
+  }
+}
+
+
+
 //kutsutaan kun käyttäjä valitsee aseman listasta
   $scope.stationItemClicked = function(station) {
 
@@ -347,3 +392,26 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
 
 
 }]);
+
+function formatDateToString(date) {
+    var d = new Date(date);
+    var hours = '';
+    var minutes = ''
+
+    if(d.getHours()<10) {
+      hours = '0' + d.getHours().toString();
+    } else {
+      hours = d.getHours().toString();
+    }
+
+    if(d.getMinutes()<10) {
+      minutes = '0' + d.getMinutes().toString();
+    } else {
+      minutes = d.getMinutes().toString();
+    }
+
+    var time = hours + ':' + minutes;
+
+    return time;
+
+}
