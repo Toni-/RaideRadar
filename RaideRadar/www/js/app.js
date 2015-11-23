@@ -37,6 +37,15 @@ app.config(function($stateProvider, $urlRouterProvider) {
         }
       }
     })
+    .state('tabs.details', {
+      url: "/details",
+      views: {
+        'home-tab': {
+          templateUrl: "templates/details.html",
+          controller: 'ScheduleCtrl'
+        }
+      }
+    })
     .state('tabs.about', {
       url: "/about",
       views: {
@@ -262,7 +271,7 @@ function sortOutput(a, b) {
 }
 
 // Schedule Controller
-app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', function($scope, $http, Stations, StationHelper) {
+app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', function($scope, $http, $q, Stations, StationHelper) {
 
   //$scope.stations = [];
   $scope.data = { "stations" : [], "search" : '', "isDestination" : false };
@@ -270,10 +279,16 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
   var departureShortCode = " ";
   var destinationShortCode = " ";
 
+
+    console.log(document)
+
+    console.log("scope: documetn! " + $scope.document)
+
+
   Stations.query(function(data) {
         
-        for(value in data) {
-            stations[value] = (data[value]);
+        for(var i = 0; i<data.length; i = i +1) {
+            stations[i] = (data[i]);
         }
 
         console.log($scope.stations);
@@ -302,6 +317,134 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
       }
     )
   }
+
+  $scope.trainClicked = function(train) {
+
+    console.log(train);
+    console.log(document)
+    console.log(document.getElementById("route"))
+
+// odottaa että tabin html-template on latautunut,
+// jonka jälkeen asettaa junan tiedot html-tiedostoon
+    function waitForTabLoading() {
+      if(document.getElementById("timeInfo")==null) {//we want it to match
+        setTimeout(waitForTabLoading, 50);//wait 50 millisecnds then recheck
+        return;
+    }
+
+    console.log("swag:" + destinationShortCode);
+    var detailHTML = '<div class="row">'
+    for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
+    
+      if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
+        console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
+
+        detailHTML = detailHTML + '<div class="col"><h3 align="center">Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
+
+      } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") { 
+
+
+        detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
+
+   }
+
+   
+
+   if(train.runningCurrently) {
+    document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna on liikkeellä</h3>"
+   } else {
+    document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna ei ole liikkeellä</h3>"
+   }
+
+  }
+
+  var compPromise = getTrainComposition(train);
+
+  compPromise.then(function(result) {
+
+    setWagonData(result, setWagonImages)
+  });
+
+
+  document.getElementById("timeInfo").innerHTML = detailHTML + '</div>'
+
+  }
+
+  waitForTabLoading();
+
+}
+
+getTrainComposition = function(train) {
+
+  var temp = {};
+    var defer = $q.defer();
+    $http.get('http://rata.digitraffic.fi/api/v1/compositions/' + train.trainNumber + '?departure_date=' + train.departureDate).success(function(data){
+            temp =data;
+            defer.resolve(data);
+
+    });
+    return defer.promise;
+}
+
+setWagonData = function(data, callback) {
+
+  var wagonCount = 0;
+  var wagonHTML = '';
+  if(data.journeySections != null) {
+  console.log("lenght :" + data.journeySections.length);
+    for(var i = 0; i<data.journeySections.length; i = i + 1) {
+      if(data.journeySections[i].beginTimeTableRow.stationShortCode == departureShortCode) {
+          if(data.journeySections[i].wagons != null) {
+            wagonCount = data.journeySections[i].wagons.length
+            console.log("vaunuja oikeessa mestassa: " + data.journeySections[i].wagons.length);
+          } else {
+              wagonCount = tempCount;
+              console.log("wagonCount :" + wagonCount);
+          }
+
+        } else if(data.journeySections[i].wagons != null) {
+          console.log("vaunumäärä" + data.journeySections[i].beginTimeTableRow.stationShortCode + "ssä: " + data.journeySections[i].wagons.length)
+          tempCount = data.journeySections[i].wagons.length
+        }
+    }
+  }
+
+
+  callback(Math.floor(Math.random() * 12) + 1 );
+
+
+    
+
+}
+
+setWagonImages = function(wagonCount) {
+
+  if(wagonCount != 0) {
+
+  wagonHTML = '<div align="center"><h3>Vaunuja junassa: ' + wagonCount + '</div><div class="row">'
+
+
+    for(var j = 0;j<wagonCount;j = j + 1) {
+      if(j == wagonCount-1) {
+        wagonHTML += '<div class="col"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
+        document.getElementById("wagonInfo").innerHTML = wagonHTML
+      } else {
+         console.log("we here" + j)
+        wagonHTML += '<div class="col"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
+      }
+    }
+
+  } else {
+    document.getElementById("wagonInfo").innerHTML = '<div align="center"><h3>Vaunutietoja ei saatavilla</h3>'
+  }
+  
+
+
+
+}
+
+
+
 
 //kutsutaan kun käyttäjä valitsee aseman listasta
   $scope.stationItemClicked = function(station) {
@@ -337,13 +480,50 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
 //tekee rajapintapyynnön asemien tunnuskoodien avulla
   $scope.searchForTrains = function(station) {
 
-  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode).success(function(data) {
+  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + '&limit=8').success(function(data) {
     $scope.data.trains = data;
     console.log(data)
-  });
 
-   
-  }
+    for(var j = 0;j<$scope.data.trains.length;j = j +1) {
+
+
+      for(var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
+        if($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type =="DEPARTURE") {
+          console.log("lähtöaika: " + $scope.data.trains[j].timeTableRows[i].scheduledTime)
+
+          $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
+
+        } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type =="ARRIVAL") {
+
+          $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime); 
+        }
+      }
+    }
+  });
+}
 
 
 }]);
+
+function formatDateToString(date) {
+    var d = new Date(date);
+    var hours = '';
+    var minutes = ''
+
+    if(d.getHours()<10) {
+      hours = '0' + d.getHours().toString();
+    } else {
+      hours = d.getHours().toString();
+    }
+
+    if(d.getMinutes()<10) {
+      minutes = '0' + d.getMinutes().toString();
+    } else {
+      minutes = d.getMinutes().toString();
+    }
+
+    var time = hours + ':' + minutes;
+
+    return time;
+
+}
