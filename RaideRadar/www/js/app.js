@@ -410,7 +410,7 @@ setWagonData = function(data, callback) {
   }
 
 
-  callback(5);
+  callback(Math.floor(Math.random() * 12) + 1 );
 
 
     
