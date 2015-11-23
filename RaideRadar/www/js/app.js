@@ -409,15 +409,9 @@ setWagonData = function(data, callback) {
     }
   }
 
-  function waitForWagons() {
-      if(wagonCount==0) {//we want it to match
-        setTimeout(waitForWagons, 50);//wait 50 millisecnds then recheck
-        return;
-  }
-  callback(wagonCount);
-}
 
-waitForWagons();
+  callback(5);
+
 
     
 
