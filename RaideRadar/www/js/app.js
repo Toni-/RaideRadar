@@ -271,7 +271,7 @@ function sortOutput(a, b) {
 }
 
 // Schedule Controller
-app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', function($scope, $http, Stations, StationHelper) {
+app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', function($scope, $http, $q, Stations, StationHelper) {
 
   //$scope.stations = [];
   $scope.data = { "stations" : [], "search" : '', "isDestination" : false };
@@ -339,13 +339,13 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
       if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
         console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
 
-        detailHTML = detailHTML + '<div class="col"><h3>Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
+        detailHTML = detailHTML + '<div class="col"><h3 align="center">Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
 
       } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") { 
         console.log("saapumisaika: " + train.timeTableRows[i].scheduledTime)
         console.log("vanha" + detailHTML)
 
-        detailHTML = detailHTML + '<div class="col"><h3>Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
+        detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
         
         console.log("uus:" + detailHTML)
    }
@@ -360,11 +360,90 @@ app.controller("ScheduleCtrl", ['$scope', '$http', 'Stations', 'StationHelper', 
 
   }
 
+  var compPromise = getTrainComposition(train);
+
+  compPromise.then(function(result) {
+    return setWagonData(result)
+
+  })
+  .then(function(result) {
+      document.getElementById("wagonInfo").innerHTML = result;
+  });
+
+
   document.getElementById("timeInfo").innerHTML = detailHTML + '</div>'
 
   }
 
   waitForTabLoading();
+
+}
+
+getTrainComposition = function(train) {
+
+  var temp = {};
+    var defer = $q.defer();
+    $http.get('http://rata.digitraffic.fi/api/v1/compositions/' + train.trainNumber + '?departure_date=' + train.departureDate).success(function(data){
+            alert(data);
+            temp =data;
+            defer.resolve(data);
+
+    });
+    return defer.promise;
+}
+
+setWagonData = function(data) {
+
+  var wagonCount = 0;
+
+    for(var i = 0; i<data.journeySections.length; i = i + 1) {
+      if(data.journeySections[i].beginTimeTableRow.stationShortCode == departureShortCode) {
+          if(data.journeySections[i].wagons != null) {
+            wagonCount = data.journeySections[i].wagons.length
+            console.log("vaunuja oikeessa mestassa: " + data.journeySections[i].wagons.length);
+          } else {
+              wagonCount = tempCount;
+              console.log("wagonCount :" + wagonCount);
+          }
+
+        } else if(data.journeySections[i].wagons != null) {
+          console.log("vaunumäärä" + data.journeySections[i].beginTimeTableRow.stationShortCode + "ssä: " + data.journeySections[i].wagons.length)
+          tempCount = data.journeySections[i].wagons.length
+        }
+    }
+
+    var wagonHTMLtemp = '<div align="center"><h3>Vaunuja junassa: ' + wagonCount + '</div><div class="row">'
+
+
+    for(var j = 0;j<wagonCount;j = j + 1) {
+      if(j == wagonCount-1) {
+        wagonHTMLtemp += '<div class="col"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
+      } else {
+         console.log("we here" + j)
+        wagonHTMLtemp += '<div class="col"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
+      }
+    }
+
+    var wagonHTML = wagonHTMLtemp
+
+    return wagonHTML;
+
+}
+
+setWagonData1 = function(train) {
+
+
+
+  $http.get('http://rata.digitraffic.fi/api/v1/compositions/' + train.trainNumber + '?departure_date=' + train.departureDate).success(function(data) {
+    console.log(data);
+
+    
+
+    //wagonHTML += '<div class="col"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
+
+    document.getElementById("wagonInfo").innerHTML = '<div align="center"><h3>Vaunuja junassa: ' + wagonCount + '</div>' + wagonHTML + '</div>';
+
+  });
 
 }
 
