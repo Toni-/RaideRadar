@@ -1,11 +1,13 @@
 var stations        = [];
 var selectedStation = {};
+var favorites       = [];
+var db              = null;
 
 console.log(stations);
 
 var app = angular.module('radar', ['ionic', 'ngResource', 'ngCordova']);
 
-app.run(function($ionicPlatform) {
+app.run(function($ionicPlatform, $cordovaSQLite) {
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
@@ -15,6 +17,9 @@ app.run(function($ionicPlatform) {
     if(window.StatusBar) {
       StatusBar.styleDefault();
     }
+    db = $cordovaSQLite.openDB("my.db");
+    $cordovaSQLite.execute(db, "CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY, fromStation VARCHAR, toStation VARCHAR)");
+       
   });
 });
 
@@ -59,7 +64,8 @@ app.config(function($stateProvider, $urlRouterProvider) {
       url: "/contact",
       views: {
         'contact-tab': {
-          templateUrl: "templates/contact.html"
+          templateUrl: "templates/contact.html",
+          controller: 'DBCtrl'
         }
       }
     });
@@ -68,6 +74,20 @@ app.config(function($stateProvider, $urlRouterProvider) {
    $urlRouterProvider.otherwise("/tab/home");
 
 });
+
+// Shares station data between ScheduleCtrl and DBCtrl
+app.service('sharedProperties', function () {
+        var property = 'test';
+
+        return {
+            getProperty: function () {
+                return property;
+            },
+            setProperty: function(value) {
+                property = value;
+            }
+        };
+    });
 
 
 //palauttaa olion kaikista asemista
@@ -271,7 +291,8 @@ function sortOutput(a, b) {
 }
 
 // Schedule Controller
-app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', function($scope, $http, $q, Stations, StationHelper) {
+app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', 'sharedProperties', function($scope, $http, $q, Stations, StationHelper, sharedProperties) {
+
 
   //$scope.stations = [];
   $scope.data = { "stations" : [], "search" : '', "isDestination" : false };
@@ -303,8 +324,8 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
       destinationEdited = false;
       console.log(matches[0].stationName)
     }
-  )
-}
+   )
+  }
 
 //etsii asemia käyttäjän syötteen perusteella määränpää-tekstikenttään
   $scope.searchDestination = function() {
@@ -500,9 +521,49 @@ setWagonImages = function(wagonCount) {
       }
     }
   });
-}
+  }
 
 
+}]);
+
+app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', function($scope, $cordovaSQLite, sharedProperties) {
+
+
+ 
+    $scope.insert = function() {
+      console.log("insert");
+      $scope.prop2 = "Second";
+      $scope.both = sharedProperties.getProperty() + $scope.prop2;
+      console.log($scope.both);
+
+      /*
+      var to = "Helsinki";
+      var from = "TRE";
+        var query = "INSERT INTO favorites (toStation, fromStation) VALUES (?,?)";
+        $cordovaSQLite.execute(db, query, [to, from]).then(function(res) {
+          alert("INSERT ID -> " + res.insertId);
+            console.log("INSERT ID -> " + res.insertId);
+        }, function (err) {
+          alert(err);
+            console.error(err);
+        });
+      */
+    }
+ 
+    $scope.select = function() {
+        var query = "SELECT * FROM favorites";
+        $cordovaSQLite.execute(db, query, []).then(function(res) {
+            if(res.rows.length > 0) {
+              alert("SELECTED -> " + res.rows.item(0).toStation + " " + res.rows.item(0).fromStation);
+                console.log("SELECTED -> " + res.rows.item(0).toStation + " " + res.rows.item(0).fromStation);
+            } else {
+                console.log("No results found");
+            }
+        }, function (err) {
+            console.error(err);
+        });
+    }
+ 
 }]);
 
 function formatDateToString(date) {
