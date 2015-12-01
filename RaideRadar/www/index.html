@@ -16,6 +16,7 @@
         <!--<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-resource.min.js" type="text/javascript"></script>-->
         <script src="lib/angular-resource/angular-resource.min.js" type="text/javascript"</script> 
         <!-- cordova script (this will be a 404 during development) -->
+        <script src="js/ng-cordova.min.js"></script>        
         <script src="cordova.js"></script>
         <script src="lib/ngCordova/dist/ng-cordova.js"></script>
         <!-- your app's js -->
@@ -44,7 +45,7 @@
         <ion-nav-view name="about-tab"></ion-nav-view>
       </ion-tab>
 
-      <ion-tab title="Contact" icon="ion-ios-world" ui-sref="tabs.contact">
+      <ion-tab title="Suosikit" icon="ion-star" ui-sref="tabs.contact">
         <ion-nav-view name="contact-tab"></ion-nav-view>
       </ion-tab>
 
@@ -122,9 +123,15 @@
  
 
   <script id="templates/contact.html" type="text/ng-template">
-    <ion-view title="Contact">
+    <ion-view title="Suosikit">
       <ion-content>
-     
+        <h2> Suosikit </h2>
+        <button class="button button-light" ng-click="insert()">
+          ins
+        </button>
+        <button class="button button-light" ng-click="select()">
+          show
+        </button>
       </ion-content>
     </ion-view>
   </script>
