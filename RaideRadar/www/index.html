@@ -7,6 +7,7 @@
         <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
         <link href="lib/ionic/css/ionic.css" rel="stylesheet">
         <link href="css/style.css" rel="stylesheet">
+        <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
         <!-- Latest compiled and minified CSS -->
         <!-- IF using Sass (run gulp sass first), then uncomment below and remove the CSS includes above
             <link href="css/ionic.app.css" rel="stylesheet">
@@ -22,6 +23,7 @@
         <!-- your app's js -->
         <script src="js/app.js"></script>
         <script src="http://maps.google.com/maps/api/js?key=AIzaSyDYDGChlTGhtSqveFIgAfqSGae4IGxrS2k"></script>
+        <script src="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"></script>
     </head>
     <body ng-app="radar">
 
@@ -37,15 +39,15 @@
   <script id="templates/tabs.html" type="text/ng-template">
     <ion-tabs class="tabs-icon-top tabs-royal">
 
-      <ion-tab title="Junahaku" icon="ion-home" href="#/tab/home">
+      <ion-tab title="Junahaku" icon="ion-ios-search-strong" href="#/tab/home">
         <ion-nav-view name="home-tab"></ion-nav-view>
       </ion-tab>
 
-      <ion-tab title="Juna kartta" icon="ion-ios-information" href="#/tab/about">
+      <ion-tab title="Asema kartta" icon="ion-map" href="#/tab/about">
         <ion-nav-view name="about-tab"></ion-nav-view>
       </ion-tab>
 
-      <ion-tab title="Suosikit" icon="ion-star" ui-sref="tabs.contact">
+      <ion-tab title="Suosikit" icon="ion-ios-heart" ui-sref="tabs.contact">
         <ion-nav-view name="contact-tab"></ion-nav-view>
       </ion-tab>
 
@@ -58,6 +60,8 @@
             <ion-content>
                 <div class="content">
                     <div class="row">
+
+
                         <div class="col text-center">Mistä</div>
                         <div class="col text-center">Mihin</div>
                     </div>
@@ -94,9 +98,13 @@
                         <button class="button button-royal ion-chevron-right" ng-show="editingStopped" ng-click="searchForTrains()">
                         Hae junat
                         </button>
+                        <button class="button button-assertive ion-ios-heart" ng-show="showFavoriteButton" ng-click="addToFavorites()">
+                        Lisää suosikiksi
+                        </button>
                         <ion-scroll zooming="false" direction="y" style="height: 700px">
                             <div class="list">
-                                <li class="item" ng-repeat="train in data.trains" ng-click="trainClicked({{train}})"> <a class="button icon icon-right ion-chevron-right button-block"  href="#/tab/details">{{train.trainType}}{{train.trainNumber}}  {{train.depTime}} - {{train.desTime}}</a></li>
+                                <li class="item" ng-repeat="train in data.trains" ng-click="trainClicked({{train}})" > <a class="button icon icon-right ion-chevron-right button-block" 
+                                  href="#/tab/details">{{train.trainType}}{{train.trainNumber}}  {{train.depTime}} - {{train.desTime}}</a></li>
                             </div>
                         </ion-scroll>
                         </div>
@@ -125,13 +133,25 @@
   <script id="templates/contact.html" type="text/ng-template">
     <ion-view title="Suosikit">
       <ion-content>
-        <h2> Suosikit </h2>
-        <button class="button button-light" ng-click="insert()">
-          ins
-        </button>
-        <button class="button button-light" ng-click="select()">
-          show
-        </button>
+        <h2 id="favoriteHeader"> Suosikit </h2>
+          <div id="favorites">
+          <table class="pure-table pure-table-horizontal" id="favoriteTable">
+            <thead id="favoriteTableHead">
+              <tr>
+                <th>Lähtöasema</th>
+                <th>Saapumisasema</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="favorite in favArray">
+                <td>{{ favorite.fromStation }}</td>
+                <td>{{ favorite.toStation }}</td>
+                <td><button class="button-assertive pure-button" ng-click='delete(favorite)'>Poista</button></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
       </ion-content>
     </ion-view>
   </script>

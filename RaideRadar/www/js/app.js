@@ -1,7 +1,9 @@
-var stations        = [];
-var selectedStation = {};
-var favorites       = [];
-var db              = null;
+var stations          = [];
+var selectedStation   = {};
+var favorites         = [];
+var tempDestShortCode = "";
+var tempDepShortCode  = "";
+var db                = null;
 
 console.log(stations);
 
@@ -17,9 +19,9 @@ app.run(function($ionicPlatform, $cordovaSQLite) {
     if(window.StatusBar) {
       StatusBar.styleDefault();
     }
-    db = $cordovaSQLite.openDB("my.db");
-    $cordovaSQLite.execute(db, "CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY, fromStation VARCHAR, toStation VARCHAR)");
-       
+    db = $cordovaSQLite.openDB("favorites.db");
+    $cordovaSQLite.execute(db, "CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY, fromStation VARCHAR, toStation VARCHAR, fromStationCode VARCHAR, toStationCode VARCHAR)");
+
   });
 });
 
@@ -76,17 +78,42 @@ app.config(function($stateProvider, $urlRouterProvider) {
 });
 
 // Shares station data between ScheduleCtrl and DBCtrl
-app.service('sharedProperties', function () {
-        var property = 'test';
+app.factory('sharedProperties', function ($rootScope) {
+        var sharedService = {};
 
+        sharedService.toStation       = "";
+        sharedService.toStationCode   = "";
+        sharedService.fromStation     = "";
+        sharedService.fromStationCode = "";
+/*
         return {
-            getProperty: function () {
-                return property;
+            getStationObject: function () {
+                return stationObject;
             },
-            setProperty: function(value) {
-                property = value;
+            setStationObject: function(toStation, toStationCode, fromStation, fromStationCode) {
+                stationObject = { "toStation": toStation, "toStationCode": toStationCode,
+                "fromStation": fromStation, "fromStationCode": fromStationCode };
             }
         };
+*/
+        sharedService.prepForBroadcast = function(toStation, toStationCode, fromStation, fromStationCode) {
+            this.toStation       = toStation;
+            this.toStationCode   = toStationCode;
+            this.fromStation     = fromStation;
+            this.fromStationCode = fromStationCode;
+
+            this.broadcastItem();
+        };
+
+        sharedService.broadcastItem = function() {
+            $rootScope.$broadcast("handleBroadcast");
+        };
+
+        sharedService.broadcastMapReload = function() {
+            $rootScope.$broadcast("handleReload");
+        };
+
+        return sharedService;
     });
 
 
@@ -100,7 +127,7 @@ app.factory("Stations", function($resource) {
 app.factory('StationHelper', function($q, $timeout) {
 
     var searchStations = function(searchFilter) {
-         
+
         console.log('Searching stations for ' + searchFilter);
 
         var deferred = $q.defer();
@@ -109,11 +136,11 @@ app.factory('StationHelper', function($q, $timeout) {
         if(station.stationName.toLowerCase().indexOf(searchFilter.toLowerCase()) !== -1 ) {
           console.log("found!")
           return true;
-        } 
+        }
       })
 
         $timeout( function(){
-        
+
            deferred.resolve( matches );
 
         }, 0);
@@ -130,22 +157,27 @@ app.factory('StationHelper', function($q, $timeout) {
 })
 
 // Map Controller
-app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation) {
+app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation, sharedProperties) {
+/*
+  $scope.$on("handleReload", function() {
+        $window.location.reload();
+    });
+*/
   var options = { timeout: 10000, enableHighAccuracy: true };
- 
+
   $cordovaGeolocation.getCurrentPosition(options).then(function(position){
- 
+
     var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
- 
+
     var mapOptions = {
       center: latLng,
       zoom: 9,
       streetViewControl: false,
       mapTypeId: google.maps.MapTypeId.ROADMAP
     };
- 
+
     $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
-    
+     
     var markers = [];
 
     // Add marker to every passanger traffic station
@@ -163,7 +195,7 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation) {
         });
         markers.push(marker);
         marker.setMap($scope.map);
-  
+
         markerInfo(marker, stations[i].stationShortCode, stations[i].stationName);
       }
     }
@@ -193,8 +225,8 @@ function markerInfo(marker, shortCode, stationName) {
 function getStation(marker, shortCode, stationName) {
     var xmlHttp = new XMLHttpRequest();
 
-    xmlHttp.onreadystatechange = function() { 
-      if (xmlHttp.readyState == 4 && xmlHttp.status == 200) 
+    xmlHttp.onreadystatechange = function() {
+      if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
         var responseData = JSON.parse(xmlHttp.responseText);
         selectedStation = responseData;
         //console.log(responseData);
@@ -202,10 +234,10 @@ function getStation(marker, shortCode, stationName) {
         setInfoMarkerText(shortCode, stationName);
     }
 
-    xmlHttp.open("GET", 
-      "http://rata.digitraffic.fi/api/v1/live-trains?station=" + 
-      shortCode + "&arrived_trains=5&arriving_trains=5&departed_trains=5&departing_trains=5", 
-      true);  
+    xmlHttp.open("GET",
+      "http://rata.digitraffic.fi/api/v1/live-trains?station=" +
+      shortCode + "&arrived_trains=5&arriving_trains=5&departed_trains=5&departing_trains=5",
+      true);
     xmlHttp.send(null);
 }
 
@@ -213,6 +245,7 @@ function getStation(marker, shortCode, stationName) {
 function setInfoMarkerText(shortCode, stationName) {
   var outputHTML = "";
   var outputArr  = [];
+  
 
   console.log("asemien määrä " + selectedStation.length);
 
@@ -223,7 +256,7 @@ function setInfoMarkerText(shortCode, stationName) {
       if (selectedStation[train].trainCategory == "Long-distance" ||
           selectedStation[train].trainCategory == "Commuter" ) {
           var temp = "";
-          temp    += "<table class='pure-table'><caption><b>" + selectedStation[train].trainType + " " + 
+          temp    += "<table class='pure-table'><caption><b>" + selectedStation[train].trainType + " " +
                                       selectedStation[train].trainNumber + "<b></caption>" +
                  "<thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>"
           if (typeof selectedStation[train] != 'undefined' || selectedStation[train] != null) {
@@ -237,11 +270,11 @@ function setInfoMarkerText(shortCode, stationName) {
                       temp += "<tr>";
                       var time  = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
                       arrTime   = time;
-                      var hours = time.getHours().toString().length   == 1 
+                      var hours = time.getHours().toString().length   == 1
                           ? "0" + time.getHours().toString()   : time.getHours();
-                      var mins  = time.getMinutes().toString().length == 1 
+                      var mins  = time.getMinutes().toString().length == 1
                           ? "0" + time.getMinutes().toString() : time.getMinutes();
-                      temp += "<td>" + hours + ":"  + mins + "</td>";     
+                      temp += "<td>" + hours + ":"  + mins + "</td>";
                   }
 
                   temp += station == 0 ? "<tr><td>Lähtöasema</td>" : "";
@@ -252,17 +285,17 @@ function setInfoMarkerText(shortCode, stationName) {
                       outputArr.splice(outputArr.length-1, 1);
                       var time  = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
                       depTime   = time;
-                      var hours = time.getHours().toString().length   == 1 
+                      var hours = time.getHours().toString().length   == 1
                           ? "0" + time.getHours().toString()   : time.getHours();
-                      var mins  = time.getMinutes().toString().length == 1 
+                      var mins  = time.getMinutes().toString().length == 1
                           ? "0" + time.getMinutes().toString() : time.getMinutes();
-                      temp += "<td>" + hours + ":"  + mins + "</td>";                     
+                      temp += "<td>" + hours + ":"  + mins + "</td>";
                       temp += "</tr>";
                   }
 
                   var time = arrTime == 'undefined' ? depTime : arrTime;
                   outputArr.push({"time": time, "tableRow": temp});
-                  
+
                }
             }
           }
@@ -277,7 +310,7 @@ function setInfoMarkerText(shortCode, stationName) {
   }
 
   outputHTML += "</tbody><br>";
-  document.getElementById("markerContent").innerHTML = "<h4>" + stationName + "</h4>" + "<br>" + outputHTML; 
+  document.getElementById("markerContent").innerHTML = "<h4>" + stationName + "</h4>" + "<br>" + outputHTML;
 }
 
 function sortOutput(a, b) {
@@ -292,8 +325,11 @@ function sortOutput(a, b) {
 
 // Schedule Controller
 app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', 'sharedProperties', function($scope, $http, $q, Stations, StationHelper, sharedProperties) {
-
-
+/*
+  $scope.$on('$ionicView.beforeLeave', function(){
+    sharedProperties.broadcastMapReload();
+  });
+*/
   //$scope.stations = [];
   $scope.data = { "stations" : [], "search" : '', "isDestination" : false };
   var destinationEdited = false;
@@ -307,7 +343,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
 
   Stations.query(function(data) {
-        
+
         for(var i = 0; i<data.length; i = i +1) {
             stations[i] = (data[i]);
         }
@@ -353,23 +389,24 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
         return;
     }
 
+
     console.log("swag:" + destinationShortCode);
     var detailHTML = '<div class="row">'
     for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
-    
+
       if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
         console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
 
         detailHTML = detailHTML + '<div class="col"><h3 align="center">Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
 
-      } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") { 
+      } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") {
 
 
         detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
 
    }
 
-   
+
 
    if(train.runningCurrently) {
     document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna on liikkeellä</h3>"
@@ -434,7 +471,7 @@ setWagonData = function(data, callback) {
   callback(Math.floor(Math.random() * 12) + 1 );
 
 
-    
+
 
 }
 
@@ -458,10 +495,6 @@ setWagonImages = function(wagonCount) {
   } else {
     document.getElementById("wagonInfo").innerHTML = '<div align="center"><h3>Vaunutietoja ei saatavilla</h3>'
   }
-  
-
-
-
 }
 
 
@@ -488,18 +521,27 @@ setWagonImages = function(wagonCount) {
     //lopetetaan editointi, jolloin lista asemista katoaa
     $scope.editingStopped = true;
     console.log("departurecode: " + departureShortCode);
-
     console.log("destinationcode: " + destinationShortCode);
+    tempDepShortCode  = departureShortCode;
+    tempDestShortCode = destinationShortCode; 
   }
 
   $scope.editingStarted = function(station) {
-  $scope.editingStopped = false;
-   
+    $scope.editingStopped = false;
+
+
+  }
+
+  $scope.addToFavorites = function() {
+      sharedProperties.prepForBroadcast($scope.data.departure, 
+        tempDepShortCode, $scope.data.destination, tempDestShortCode);  
   }
 
 //kutsutaan kun hae junat-painiketta painetaan.
 //tekee rajapintapyynnön asemien tunnuskoodien avulla
   $scope.searchForTrains = function(station) {
+
+  $scope.showFavoriteButton = true;
 
   $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + '&limit=8').success(function(data) {
     $scope.data.trains = data;
@@ -516,10 +558,16 @@ setWagonImages = function(wagonCount) {
 
         } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type =="ARRIVAL") {
 
-          $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime); 
+          $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
         }
       }
     }
+
+    if($scope.data.trains != null) {
+      trainsFound = true;
+      console.log("flalflöfalöaflöfalöföafffafa");
+    }
+
   });
   }
 
@@ -527,35 +575,68 @@ setWagonImages = function(wagonCount) {
 }]);
 
 app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', function($scope, $cordovaSQLite, sharedProperties) {
+    //var objToInsert = sharedProperties.getProperty();
+    var objToInsert = {};
+    $scope.favArray = [];
 
+    $scope.$on("handleBroadcast", function() {
+        objToInsert = {"toStation":       sharedProperties.toStation, 
+                       "toStationCode":   sharedProperties.toStationCode,
+                       "fromStation":     sharedProperties.fromStation, 
+                       "fromStationCode": sharedProperties.fromStationCode};
+        insert();
+    });
 
- 
-    $scope.insert = function() {
-      console.log("insert");
-      $scope.prop2 = "Second";
-      $scope.both = sharedProperties.getProperty() + $scope.prop2;
-      console.log($scope.both);
+    selectAllFromTable();   
 
-      /*
-      var to = "Helsinki";
-      var from = "TRE";
-        var query = "INSERT INTO favorites (toStation, fromStation) VALUES (?,?)";
-        $cordovaSQLite.execute(db, query, [to, from]).then(function(res) {
-          alert("INSERT ID -> " + res.insertId);
+    function insert() {
+        var query = "INSERT INTO favorites (toStation, toStationCode, fromStation, fromStationCode) VALUES (?,?,?,?)";
+        $cordovaSQLite.execute(db, query, [objToInsert.toStation, objToInsert.toStationCode,
+          objToInsert.fromStation, objToInsert.fromStationCode]).then(function(res) {
             console.log("INSERT ID -> " + res.insertId);
+
+          $scope.favoriteClick = true;
         }, function (err) {
-          alert(err);
+            alert(err);
             console.error(err);
         });
-      */
     }
- 
+
+    $scope.insert = function() {
+
+      console.log(sharedProperties.getProperty());
+
+
+    }
+
     $scope.select = function() {
-        var query = "SELECT * FROM favorites";
+
+    }
+
+    $scope.delete = function(favorite) {
+        console.log("delete  = " + favorite.id);
+        var query = "DELETE FROM favorites WHERE id = ?";
+        $cordovaSQLite.execute(db, query, [favorite.id]).then(function(res) {
+            console.log("deleted");
+            selectAllFromTable();
+        }, function (err) {
+            console.error(err);
+        });
+    }
+
+    function selectAllFromTable() {
+        $scope.favArray = [];
+        var query  = "SELECT * FROM favorites";
         $cordovaSQLite.execute(db, query, []).then(function(res) {
             if(res.rows.length > 0) {
-              alert("SELECTED -> " + res.rows.item(0).toStation + " " + res.rows.item(0).fromStation);
-                console.log("SELECTED -> " + res.rows.item(0).toStation + " " + res.rows.item(0).fromStation);
+              // res.rows.item(0).toStation
+              for (var i = 0; i < res.rows.length; i++) {
+                console.log("db to " + res.rows.item(i).toStation, res.rows.item(i).toStationCode,
+                  res.rows.item(i).fromStation, res.rows.item(i).fromStationCode);
+                  $scope.favArray.push({"fromStation": res.rows.item(i).fromStation, 
+                      "fromStationCode": res.rows.item(i).fromStationCode, "toStation": res.rows.item(i).toStation, 
+                      "toStationCode": res.rows.item(i).toStationCode, "id": res.rows.item(i).id})
+              }
             } else {
                 console.log("No results found");
             }
@@ -563,7 +644,6 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', functi
             console.error(err);
         });
     }
- 
 }]);
 
 function formatDateToString(date) {
