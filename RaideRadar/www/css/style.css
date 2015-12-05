@@ -1,3 +1,7 @@
+body {
+	font-family: 'Montserrat', sans-serif;
+}
+
 #map {
   width: 100%;
   height: 100%;
@@ -13,4 +17,21 @@
 
 h4 {
 	text-align: center;
+}
+
+#favoriteHeader {
+	text-align: center;
+}
+
+#favorites {
+
+}
+
+#favoriteTable {
+	width: 95%;
+	margin: 0 auto;
+}
+
+#favoriteTableHead {
+	background-color: #6b46e5;
 }
