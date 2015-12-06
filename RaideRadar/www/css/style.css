@@ -1,0 +1,100 @@
+body {
+	font-family: 'Montserrat', sans-serif;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+.scroll {
+  height: 100%;
+}
+
+#markerContent {
+    
+}
+
+h4 {
+	text-align: center;
+}
+
+#favoriteHeader {
+	text-align: center;
+}
+
+#favorites {
+
+}
+
+#favoriteTable {
+	width: 95%;
+	margin: 0 auto;
+}
+
+#favoriteTableHead {
+	background-color: #6b46e5;
+}
+
+#trainlist-item {
+    border: solid black 0px;
+
+    padding-top: 0px;
+    padding-bottom: 0px;
+    height: auto;
+}
+
+#trainbutton {
+    margin-top: 0px;
+    height: 0px;
+    padding-top: 0px;
+    color: blue;
+}
+
+#stationlist {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+#trainimg {
+    padding-left: 0px;
+    padding-right: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+
+}
+#trainimg img {
+    max-height: 80px;
+    max-width: 80px;
+}
+
+#train-time {
+    font-size: 5vw;
+    color: #22cc22;
+}
+#train-name {
+    font-size: 5vw;
+    color: #ff2222;
+}
+
+#depStation {
+    font-size: 5vw;
+
+}
+
+#desStation {
+    font-size: 5vw;
+
+}
+
+#trainprogressed {
+    min-width: 0.001em;
+    background-color: #00ff00;
+}
+
+#trainnotprogressed {
+    min-width: 0.001em;
+    background-color: #aa55ee;
+}
