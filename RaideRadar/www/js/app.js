@@ -602,15 +602,15 @@ $scope.toTimeChanged = function() {
 
   if(document.getElementById('fromTime').value != null) {
     console.log("fromtime" + document.getElementById('fromTime').value)
-    queryString += '&from=' + document.getElementById('fromTime').value;
+    queryString += '&from=' + document.getElementById('fromTime').value + 'T00:00:01.564Z';
   }
 
   if(document.getElementById('toTime').value != null && document.getElementById('toTime').value != null) {
     console.log("totime" + document.getElementById('toTime').value)
-    queryString += '&to=' +document.getElementById('toTime').value;
+    queryString += '&to=' +document.getElementById('toTime').value + 'T23:59:59.564Z';
   }
 
-  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=8').success(function(data) {
+  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
     $scope.data.trains = data;
     console.log(data)
 
