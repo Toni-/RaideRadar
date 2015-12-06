@@ -19,6 +19,7 @@ app.run(function($ionicPlatform, $cordovaSQLite) {
     if(window.StatusBar) {
       StatusBar.styleDefault();
     }
+    console.log($cordovaSQLite)
     db = $cordovaSQLite.openDB("favorites.db");
     $cordovaSQLite.execute(db, "CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY, fromStation VARCHAR, toStation VARCHAR, fromStationCode VARCHAR, toStationCode VARCHAR)");
 
@@ -179,6 +180,9 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation, sharedPr
     $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
      
     var markers = [];
+    var image = {
+      url: 'img/marker32.png'
+    };
 
     // Add marker to every passanger traffic station
     for (var i = 0; i < stations.length; i++) {
@@ -191,7 +195,8 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation, sharedPr
            position: latLng,
            //map: map,
            draggable:false,
-           title: location.stationName
+           title: location.stationName,
+           icon: image
         });
         markers.push(marker);
         marker.setMap($scope.map);
@@ -375,6 +380,20 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
     )
   }
 
+  $scope.isTimePassed = function(dateToCompare) {
+
+    var currentTime = new Date();
+
+    var date2 = new Date(dateToCompare);
+
+    if(date2>currentTime) {
+      return false;
+    } else {
+      return true;
+    }
+
+  }
+
   $scope.trainClicked = function(train) {
 
     console.log(train);
@@ -390,9 +409,24 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
     }
 
 
+
+
     console.log("swag:" + destinationShortCode);
     var detailHTML = '<div class="row">'
+    var progressBarHTML = '<div class="row"><div class="col col-20"></div>'
+
+    var c = 0;
     for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
+
+      if(!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop) {
+        c = c + 1
+        console.log('ewd' + c);
+        progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
+      } else if($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop) {
+        progressBarHTML += '<div class="col" id="trainprogressed"></div>'
+        c = c + 1
+        console.log('ii' + c);
+      }
 
       if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
         console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
@@ -404,12 +438,18 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
         detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
 
+      if(i == train.timeTableRows.length-1) {
+        console.log('yay!');
+        progressBarHTML += '<div class="col col-20"></div></div>'
+      }
+
    }
 
 
 
    if(train.runningCurrently) {
     document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna on liikkeellä</h3>"
+    document.getElementById("progressBar").innerHTML = progressBarHTML
    } else {
     document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna ei ole liikkeellä</h3>"
    }
@@ -419,7 +459,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
   var compPromise = getTrainComposition(train);
 
   compPromise.then(function(result) {
-
+    setWagonImages(0)
     setWagonData(result, setWagonImages)
   });
 
@@ -448,32 +488,42 @@ setWagonData = function(data, callback) {
 
   var wagonCount = 0;
   var wagonHTML = '';
+  var forcount = 0;
   if(data.journeySections != null) {
   console.log("lenght :" + data.journeySections.length);
     for(var i = 0; i<data.journeySections.length; i = i + 1) {
+
       if(data.journeySections[i].beginTimeTableRow.stationShortCode == departureShortCode) {
+
           if(data.journeySections[i].wagons != null) {
             wagonCount = data.journeySections[i].wagons.length
             console.log("vaunuja oikeessa mestassa: " + data.journeySections[i].wagons.length);
-          } else {
-              wagonCount = tempCount;
-              console.log("wagonCount :" + wagonCount);
           }
 
-        } else if(data.journeySections[i].wagons != null) {
+          forcount += 1
+
+          console.log("forcoutn: " + forcount)
+
+      } else if(data.journeySections[i].wagons != null) {
           console.log("vaunumäärä" + data.journeySections[i].beginTimeTableRow.stationShortCode + "ssä: " + data.journeySections[i].wagons.length)
-          tempCount = data.journeySections[i].wagons.length
-        }
+          if(wagonCount == 0) {
+
+           wagonCount = data.journeySections[i].wagons.length
+          }
+          forcount += 1
+          console.log("forcoutn: " + forcount)
+      }
+
+      if(i == data.journeySections.length-1) {
+          console.log("let's call callback!")
+          callback(wagonCount);
+
+      }
     }
   }
-
-
-  callback(Math.floor(Math.random() * 12) + 1 );
-
-
-
-
 }
+
+
 
 setWagonImages = function(wagonCount) {
 
@@ -484,11 +534,11 @@ setWagonImages = function(wagonCount) {
 
     for(var j = 0;j<wagonCount;j = j + 1) {
       if(j == wagonCount-1) {
-        wagonHTML += '<div class="col"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
+        wagonHTML += '<div class="col" id="trainimg"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
         document.getElementById("wagonInfo").innerHTML = wagonHTML
       } else {
          console.log("we here" + j)
-        wagonHTML += '<div class="col"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
+        wagonHTML += '<div class="col" id="trainimg"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
       }
     }
 
@@ -497,7 +547,13 @@ setWagonImages = function(wagonCount) {
   }
 }
 
+$scope.fromTimeChanged = function() {
+  $scope.data.fromTime 
+}
 
+$scope.toTimeChanged = function() {
+  
+}
 
 
 //kutsutaan kun käyttäjä valitsee aseman listasta
@@ -542,8 +598,19 @@ setWagonImages = function(wagonCount) {
   $scope.searchForTrains = function(station) {
 
   $scope.showFavoriteButton = true;
+  var queryString = '';
 
-  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + '&limit=8').success(function(data) {
+  if(document.getElementById('fromTime').value != null) {
+    console.log("fromtime" + document.getElementById('fromTime').value)
+    queryString += '&from=' + document.getElementById('fromTime').value + 'T00:00:01.564Z';
+  }
+
+  if(document.getElementById('toTime').value != null && document.getElementById('toTime').value != null) {
+    console.log("totime" + document.getElementById('toTime').value)
+    queryString += '&to=' +document.getElementById('toTime').value + 'T23:59:59.564Z';
+  }
+
+  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
     $scope.data.trains = data;
     console.log(data)
 
