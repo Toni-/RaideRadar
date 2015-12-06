@@ -3,6 +3,8 @@ var selectedStation   = {};
 var favorites         = [];
 var tempDestShortCode = "";
 var tempDepShortCode  = "";
+var tempDestination   = "";
+var tempDeparture     = "";
 var db                = null;
 
 console.log(stations);
@@ -86,6 +88,7 @@ app.factory('sharedProperties', function ($rootScope) {
         sharedService.toStationCode   = "";
         sharedService.fromStation     = "";
         sharedService.fromStationCode = "";
+        sharedService.isFavorite      = false;
 /*
         return {
             getStationObject: function () {
@@ -97,21 +100,16 @@ app.factory('sharedProperties', function ($rootScope) {
             }
         };
 */
-        sharedService.prepForBroadcast = function(toStation, toStationCode, fromStation, fromStationCode) {
+        sharedService.prepForBroadcast = function(fromStation, fromStationCode, toStation, toStationCode) {
             this.toStation       = toStation;
             this.toStationCode   = toStationCode;
             this.fromStation     = fromStation;
             this.fromStationCode = fromStationCode;
-
             this.broadcastItem();
         };
 
         sharedService.broadcastItem = function() {
             $rootScope.$broadcast("handleBroadcast");
-        };
-
-        sharedService.broadcastMapReload = function() {
-            $rootScope.$broadcast("handleReload");
         };
 
         return sharedService;
@@ -135,7 +133,7 @@ app.factory('StationHelper', function($q, $timeout) {
 
       var matches = stations.filter( function(station) {
         if(station.stationName.toLowerCase().indexOf(searchFilter.toLowerCase()) !== -1 ) {
-          console.log("found!")
+          //console.log("found!")
           return true;
         }
       })
@@ -158,12 +156,15 @@ app.factory('StationHelper', function($q, $timeout) {
 })
 
 // Map Controller
-app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation, sharedProperties) {
+app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, sharedProperties) {
 /*
   $scope.$on("handleReload", function() {
         $window.location.reload();
     });
 */
+
+
+
   var options = { timeout: 10000, enableHighAccuracy: true };
 
   $cordovaGeolocation.getCurrentPosition(options).then(function(position){
@@ -204,6 +205,15 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation, sharedPr
         markerInfo(marker, stations[i].stationShortCode, stations[i].stationName);
       }
     }
+
+    $scope.$on('$stateChangeSuccess', function() {
+    // TODO: this is a hack...
+    $interval(function() {
+      console.log("map fix");
+        //$scope.map.invalidateSize();
+      google.maps.event.trigger($scope.map, 'resize');
+    }, 500, 1);
+});
 
   }, function(error){
     console.log("Could not get location");
@@ -330,12 +340,9 @@ function sortOutput(a, b) {
 
 // Schedule Controller
 app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', 'sharedProperties', function($scope, $http, $q, Stations, StationHelper, sharedProperties) {
-/*
-  $scope.$on('$ionicView.beforeLeave', function(){
-    sharedProperties.broadcastMapReload();
-  });
-*/
-  //$scope.stations = [];
+  
+  $scope.addedToFavorites = false;
+
   $scope.data = { "stations" : [], "search" : '', "isDestination" : false };
   var destinationEdited = false;
   var departureShortCode = " ";
@@ -358,14 +365,14 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
 //etsii asemia käyttäjän syötteen perusteella lähtöasema-tekstikenttään
   $scope.searchDeparture = function() {
-
+  
   StationHelper.searchStations($scope.data.departure).then(
     function(matches) {
       $scope.data.stations = matches;
       destinationEdited = false;
       console.log(matches[0].stationName)
     }
-   )
+   ) 
   }
 
 //etsii asemia käyttäjän syötteen perusteella määränpää-tekstikenttään
@@ -379,6 +386,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
       }
     )
   }
+
 
   $scope.isTimePassed = function(dateToCompare) {
 
@@ -394,7 +402,12 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
   }
 
-  $scope.trainClicked = function(train) {
+  $scope.trainClicked = function(train, departure, destination) {
+
+    tempDeparture   = departure;
+    tempDestination = destination;
+
+    console.log("dep " + departure + " - dest " + destination);
 
     console.log(train);
     console.log(document)
@@ -579,18 +592,18 @@ $scope.toTimeChanged = function() {
     console.log("departurecode: " + departureShortCode);
     console.log("destinationcode: " + destinationShortCode);
     tempDepShortCode  = departureShortCode;
-    tempDestShortCode = destinationShortCode; 
+    tempDestShortCode = destinationShortCode;
   }
 
   $scope.editingStarted = function(station) {
     $scope.editingStopped = false;
-
-
   }
 
   $scope.addToFavorites = function() {
-      sharedProperties.prepForBroadcast($scope.data.departure, 
-        tempDepShortCode, $scope.data.destination, tempDestShortCode);  
+      $scope.addedToFavorites = true;
+      console.log("to " + tempDestination + " from " + tempDeparture);
+      sharedProperties.prepForBroadcast(tempDeparture, 
+        tempDepShortCode, tempDestination, tempDestShortCode);
   }
 
 //kutsutaan kun hae junat-painiketta painetaan.
@@ -651,6 +664,7 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', functi
                        "toStationCode":   sharedProperties.toStationCode,
                        "fromStation":     sharedProperties.fromStation, 
                        "fromStationCode": sharedProperties.fromStationCode};
+        console.log("broadcast insert");
         insert();
     });
 
@@ -676,8 +690,13 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', functi
 
     }
 
-    $scope.select = function() {
+    $scope.select = function(favorite) {
+        console.log("selcted to " + favorite.toStation + " " + favorite.toStationCode +
+          " - from " + favorite.fromStation + " " + favorite.fromStationCode);
+    }
 
+    $scope.refresh = function(favorite) {
+        selectAllFromTable();
     }
 
     $scope.delete = function(favorite) {
