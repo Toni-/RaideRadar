@@ -26,6 +26,10 @@
         <script src="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"></script>
     </head>
     <body ng-app="radar">
+      <script type="text/javascript">
+      var textElement = document.registerElement('text-e');
+      document.body.appendChild(new textElement());
+      </script>
 
 <!-- Back button -->
   <ion-nav-bar class="bar-royal">
@@ -80,13 +84,27 @@
                             </label>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col">
+                            <label class="item item-input">
+                            <i class="icon ion-search placeholder-icon"></i>
+                            <input type="date" class="form-control text-center" id="fromTime" placeholder="Lähtöaika" ng-model="data.fromtime">
+                        </div>
+                        </label>
+                        <div class="col">
+                            <label class="item item-input">
+                            <i class="icon ion-search placeholder-icon"></i>
+                            <input type="date" class="form-control text-center" id="toTime" placeholder="Saapumisaika" ng-model="data.totime"></i>
+                            </label>
+                        </div>
+                    </div>
 
                     <!-- lista löydetyistä asemista. piilossa ellei käyttäjä kirjoita tekstikenttiin -->
                     <div class="row">
                         <div ng-hide="editingStopped" class="col">
                             <ion-scroll zooming="false" direction="y" style="height: 200px">
                                 <div class="list">
-                                    <li class="item" ng-repeat="station in data.stations" ng-click="stationItemClicked({{station}})" >{{station.stationName}}</li>
+                                    <li class="item" id="stationlist" ng-repeat="station in data.stations" ng-click="stationItemClicked({{station}})">{{station.stationName}}</li>
                                 </div>
                             </ion-scroll>
                         </div>
@@ -100,8 +118,8 @@
                         </button>
                         <ion-scroll zooming="false" direction="y" style="height: 700px">
                             <div class="list">
-                                <li class="item" ng-repeat="train in data.trains" ng-click="trainClicked(train, data.departure, data.destination)" > <a class="button icon icon-right ion-chevron-right button-block"
-                                  href="#/tab/details">{{train.trainType}}{{train.trainNumber}}  {{train.depTime}} - {{train.desTime}}</a></li>
+                                <li class="item trains" id="trainlist-item" ng-repeat="train in data.trains" ng-click="trainClicked({{train, data.departure, data.destination}})" > <a id="trainbutton" class="button icon icon-right ion-chevron-right button-block" 
+                                  href="#/tab/details"><text-e id="train-time">{{train.depTime}} - {{train.desTime}}</text-e> <text-e id="train-name" align="right">{{train.trainType}}{{train.trainNumber}}</text-e></a></li>
                             </div>
                         </ion-scroll>
                         </div>
@@ -118,6 +136,7 @@
         <div id="timeInfo"></div>
           <div id="isOnRoute"></div>
           <div id="wagonInfo"></div>
+          <div id="progressBar"></div>
           <p>
             <a class="button icon ion-chevron-left" href="#/tab/home"> Takaisin</a>
             <button class="button {{ addedToFavorites ? 'button-balanced ion-checkmark-round' : 'button-assertive ion-ios-heart' }}" ng-click="addToFavorites()" ng-disabled="addedToFavorites">
