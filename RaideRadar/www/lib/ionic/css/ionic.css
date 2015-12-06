@@ -5295,10 +5295,10 @@ a.item-content {
  */
 .list {
   position: relative;
-  padding-top: 1px;
-  padding-bottom: 1px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   padding-left: 0;
-  margin-bottom: 20px; }
+  margin-bottom: 1px; }
 
 .list:last-child {
   margin-bottom: 0px; }
@@ -5318,7 +5318,8 @@ a.item-content {
 
 .card.list .list-item {
   padding-right: 1px;
-  padding-left: 1px; }
+  padding-left: 1px;
+  margin-bottom: 0px; }
 
 /**
  * Cards and Inset Lists
