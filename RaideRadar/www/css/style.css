@@ -35,3 +35,56 @@ h4 {
 #favoriteTableHead {
 	background-color: #6b46e5;
 }
+
+#trainlist-item {
+    border: solid black 0px;
+
+    padding-top: 0px;
+    padding-bottom: 0px;
+    height: auto;
+}
+
+#trainbutton {
+    margin-top: 0px;
+    height: 0px;
+    padding-top: 0px;
+    color: blue;
+}
+
+#stationlist {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+#trainimg {
+    padding-left: 0px;
+    padding-right: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+
+}
+#trainimg img {
+    max-height: 80px;
+    max-width: 80px;
+}
+
+#train-time {
+    font-size: 30px;
+    color: #22cc22;
+}
+#train-name {
+    font-size: 15px;
+    color: #ff2222;
+}
+
+#depStation {
+    font-size: 20px;
+
+}
+
+#desStation {
+    font-size: 20px;
+
+}

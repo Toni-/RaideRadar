@@ -19,6 +19,7 @@ app.run(function($ionicPlatform, $cordovaSQLite) {
     if(window.StatusBar) {
       StatusBar.styleDefault();
     }
+    console.log($cordovaSQLite)
     db = $cordovaSQLite.openDB("favorites.db");
     $cordovaSQLite.execute(db, "CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY, fromStation VARCHAR, toStation VARCHAR, fromStationCode VARCHAR, toStationCode VARCHAR)");
 
@@ -179,6 +180,9 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation, sharedPr
     $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
      
     var markers = [];
+    var image = {
+      url: 'img/marker32.png'
+    };
 
     // Add marker to every passanger traffic station
     for (var i = 0; i < stations.length; i++) {
@@ -191,7 +195,8 @@ app.controller('MapCtrl', function($scope, $state, $cordovaGeolocation, sharedPr
            position: latLng,
            //map: map,
            draggable:false,
-           title: location.stationName
+           title: location.stationName,
+           icon: image
         });
         markers.push(marker);
         marker.setMap($scope.map);
@@ -448,32 +453,42 @@ setWagonData = function(data, callback) {
 
   var wagonCount = 0;
   var wagonHTML = '';
+  var forcount = 0;
   if(data.journeySections != null) {
   console.log("lenght :" + data.journeySections.length);
     for(var i = 0; i<data.journeySections.length; i = i + 1) {
+
       if(data.journeySections[i].beginTimeTableRow.stationShortCode == departureShortCode) {
+
           if(data.journeySections[i].wagons != null) {
             wagonCount = data.journeySections[i].wagons.length
             console.log("vaunuja oikeessa mestassa: " + data.journeySections[i].wagons.length);
-          } else {
-              wagonCount = tempCount;
-              console.log("wagonCount :" + wagonCount);
           }
 
-        } else if(data.journeySections[i].wagons != null) {
+          forcount += 1
+
+          console.log("forcoutn: " + forcount)
+
+      } else if(data.journeySections[i].wagons != null) {
           console.log("vaunumäärä" + data.journeySections[i].beginTimeTableRow.stationShortCode + "ssä: " + data.journeySections[i].wagons.length)
-          tempCount = data.journeySections[i].wagons.length
-        }
+          if(wagonCount == 0) {
+
+           wagonCount = data.journeySections[i].wagons.length
+          }
+          forcount += 1
+          console.log("forcoutn: " + forcount)
+      }
+
+      if(i == data.journeySections.length-1) {
+          console.log("let's call callback!")
+          callback(wagonCount);
+
+      }
     }
   }
-
-
-  callback(Math.floor(Math.random() * 12) + 1 );
-
-
-
-
 }
+
+
 
 setWagonImages = function(wagonCount) {
 
@@ -484,11 +499,11 @@ setWagonImages = function(wagonCount) {
 
     for(var j = 0;j<wagonCount;j = j + 1) {
       if(j == wagonCount-1) {
-        wagonHTML += '<div class="col"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
+        wagonHTML += '<div class="col" id="trainimg"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
         document.getElementById("wagonInfo").innerHTML = wagonHTML
       } else {
          console.log("we here" + j)
-        wagonHTML += '<div class="col"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
+        wagonHTML += '<div class="col" id="trainimg"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
       }
     }
 
