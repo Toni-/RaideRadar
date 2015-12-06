@@ -71,20 +71,30 @@ h4 {
 }
 
 #train-time {
-    font-size: 30px;
+    font-size: 5vw;
     color: #22cc22;
 }
 #train-name {
-    font-size: 15px;
+    font-size: 5vw;
     color: #ff2222;
 }
 
 #depStation {
-    font-size: 20px;
+    font-size: 5vw;
 
 }
 
 #desStation {
-    font-size: 20px;
+    font-size: 5vw;
 
+}
+
+#trainprogressed {
+    min-width: 0.001em;
+    background-color: #00ff00;
+}
+
+#trainnotprogressed {
+    min-width: 0.001em;
+    background-color: #aa55ee;
 }

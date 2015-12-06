@@ -380,6 +380,20 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
     )
   }
 
+  $scope.isTimePassed = function(dateToCompare) {
+
+    var currentTime = new Date();
+
+    var date2 = new Date(dateToCompare);
+
+    if(date2>currentTime) {
+      return false;
+    } else {
+      return true;
+    }
+
+  }
+
   $scope.trainClicked = function(train) {
 
     console.log(train);
@@ -395,9 +409,24 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
     }
 
 
+
+
     console.log("swag:" + destinationShortCode);
     var detailHTML = '<div class="row">'
+    var progressBarHTML = '<div class="row"><div class="col col-20"></div>'
+
+    var c = 0;
     for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
+
+      if(!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop) {
+        c = c + 1
+        console.log('ewd' + c);
+        progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
+      } else if($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop) {
+        progressBarHTML += '<div class="col" id="trainprogressed"></div>'
+        c = c + 1
+        console.log('ii' + c);
+      }
 
       if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
         console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
@@ -409,12 +438,18 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
         detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
 
+      if(i == train.timeTableRows.length-1) {
+        console.log('yay!');
+        progressBarHTML += '<div class="col col-20"></div></div>'
+      }
+
    }
 
 
 
    if(train.runningCurrently) {
     document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna on liikkeellä</h3>"
+    document.getElementById("progressBar").innerHTML = progressBarHTML
    } else {
     document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna ei ole liikkeellä</h3>"
    }
@@ -424,7 +459,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
   var compPromise = getTrainComposition(train);
 
   compPromise.then(function(result) {
-
+    setWagonImages(0)
     setWagonData(result, setWagonImages)
   });
 
@@ -512,7 +547,13 @@ setWagonImages = function(wagonCount) {
   }
 }
 
+$scope.fromTimeChanged = function() {
+  $scope.data.fromTime 
+}
 
+$scope.toTimeChanged = function() {
+  
+}
 
 
 //kutsutaan kun käyttäjä valitsee aseman listasta
@@ -557,8 +598,19 @@ setWagonImages = function(wagonCount) {
   $scope.searchForTrains = function(station) {
 
   $scope.showFavoriteButton = true;
+  var queryString = '';
 
-  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + '&limit=8').success(function(data) {
+  if(document.getElementById('fromTime').value != null) {
+    console.log("fromtime" + document.getElementById('fromTime').value)
+    queryString += '&from=' + document.getElementById('fromTime').value;
+  }
+
+  if(document.getElementById('toTime').value != null && document.getElementById('toTime').value != null) {
+    console.log("totime" + document.getElementById('toTime').value)
+    queryString += '&to=' +document.getElementById('toTime').value;
+  }
+
+  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=8').success(function(data) {
     $scope.data.trains = data;
     console.log(data)
 

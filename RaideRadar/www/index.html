@@ -84,6 +84,20 @@
                             </label>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col">
+                            <label class="item item-input">
+                            <i class="icon ion-search placeholder-icon"></i>
+                            <input type="date" class="form-control text-center" id="fromTime" placeholder="Lähtöaika" ng-model="data.fromtime">
+                        </div>
+                        </label>
+                        <div class="col">
+                            <label class="item item-input">
+                            <i class="icon ion-search placeholder-icon"></i>
+                            <input type="date" class="form-control text-center" id="toTime" placeholder="Saapumisaika" ng-model="data.totime"></i>
+                            </label>
+                        </div>
+                    </div>
 
                     <!-- lista löydetyistä asemista. piilossa ellei käyttäjä kirjoita tekstikenttiin -->
                     <div class="row">
@@ -125,6 +139,7 @@
         <div id="timeInfo"></div>
           <div id="isOnRoute"></div>
           <div id="wagonInfo"></div>
+          <div id="progressBar"></div>
           <p>
             <a class="button icon ion-chevron-left" href="#/tab/home"> Takaisin</a>
           </p>
