@@ -408,6 +408,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
     tempDeparture   = departure;
     tempDestination = destination;
 
+
 // odottaa että tabin html-template on latautunut,
 // jonka jälkeen asettaa junan tiedot html-tiedostoon
     function waitForTabLoading() {
@@ -416,7 +417,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
         return;
     }
 
-
+    document.getElementById("progressBar").innerHTML = ""
 
 
     console.log("swag:" + destinationShortCode);
@@ -427,6 +428,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
     var c = 0;
     for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
+      console.log('timetablerows length' + train.timeTableRows.length);
 
       if(!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
         c = c + 1
@@ -444,17 +446,17 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
         detailHTML = detailHTML + '<div class="col"><h3 align="center">Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime,true, ":") + '</h1></div>';
         departureFound = true;
       } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") {
-
+        console.log("destinationFound")
 
         detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h1></div>';
-
+      }
       if(i == train.timeTableRows.length-1) {
         console.log('yay!');
         progressBarHTML += '<div class="col col-10" id="progress-label" align="center"><p>' + destinationShortCode + '</p></div></div>'
 
       document.getElementById("progressBar").innerHTML = progressBarHTML
       }
-
+      console.log('i is ' + i);
    }
 
 
@@ -465,7 +467,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
     document.getElementById("isOnRoute").innerHTML = "<p>Juna on pysähtynyt</p>"
    }
 
-  }
+  
 
   document.getElementById("stationRow").innerHTML = stationRowHTML
 
