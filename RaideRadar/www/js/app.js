@@ -82,38 +82,27 @@ app.config(function($stateProvider, $urlRouterProvider) {
 
 // Shares station data between ScheduleCtrl and DBCtrl
 app.factory('sharedProperties', function ($rootScope) {
-        var sharedService = {};
+    var sharedService             = {};
+    sharedService.toStation       = "";
+    sharedService.toStationCode   = "";
+    sharedService.fromStation     = "";
+    sharedService.fromStationCode = "";
+    sharedService.isFavorite      = false;
 
-        sharedService.toStation       = "";
-        sharedService.toStationCode   = "";
-        sharedService.fromStation     = "";
-        sharedService.fromStationCode = "";
-        sharedService.isFavorite      = false;
-/*
-        return {
-            getStationObject: function () {
-                return stationObject;
-            },
-            setStationObject: function(toStation, toStationCode, fromStation, fromStationCode) {
-                stationObject = { "toStation": toStation, "toStationCode": toStationCode,
-                "fromStation": fromStation, "fromStationCode": fromStationCode };
-            }
-        };
-*/
-        sharedService.prepForBroadcast = function(fromStation, fromStationCode, toStation, toStationCode) {
-            this.toStation       = toStation;
-            this.toStationCode   = toStationCode;
-            this.fromStation     = fromStation;
-            this.fromStationCode = fromStationCode;
-            this.broadcastItem();
-        };
+    sharedService.prepForBroadcast = function(fromStation, fromStationCode, toStation, toStationCode) {
+        this.toStation       = toStation;
+        this.toStationCode   = toStationCode;
+        this.fromStation     = fromStation;
+        this.fromStationCode = fromStationCode;
+        this.broadcastItem();
+    };
 
-        sharedService.broadcastItem = function() {
-            $rootScope.$broadcast("handleBroadcast");
-        };
+    sharedService.broadcastItem = function() {
+        $rootScope.$broadcast("handleBroadcast");
+    };
 
-        return sharedService;
-    });
+    return sharedService;
+});
 
 
 //palauttaa olion kaikista asemista
@@ -158,7 +147,8 @@ app.factory('StationHelper', function($q, $timeout) {
 // Map Controller
 app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, sharedProperties) {
 
-  var options = { timeout: 10000, enableHighAccuracy: true };
+  var options     = { timeout: 10000, enableHighAccuracy: true };
+  $scope.mapShown = false;
 
   $cordovaGeolocation.getCurrentPosition(options).then(function(position){
     mapInit(true, position);
@@ -282,8 +272,8 @@ function setInfoMarkerText(shortCode, stationName) {
       if (selectedStation[train].trainCategory == "Long-distance" ||
           selectedStation[train].trainCategory == "Commuter" ) {
           var temp = "";
-          temp    += "<table class='pure-table'><caption><b>" + selectedStation[train].trainType + " " +
-                                      selectedStation[train].trainNumber + "<b></caption>" +
+          temp    += "<table class='pure-table'><b><text-e id='train-name'>" + selectedStation[train].trainType + " " +
+                                      selectedStation[train].trainNumber + "</text-e></b>" +
                  "<thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>"
           if (typeof selectedStation[train] != 'undefined' || selectedStation[train] != null) {
             for (var station = 0; station < selectedStation[train].timeTableRows.length; station++) {
@@ -663,8 +653,8 @@ $scope.toTimeChanged = function() {
 
 }]);
 
+// Controller for the database
 app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ionicPopup', '$http', function($scope, $cordovaSQLite, sharedProperties, $ionicPopup, $http) {
-    //var objToInsert = sharedProperties.getProperty();
     var objToInsert = {};
     $scope.favArray = [];
     var trains;
@@ -691,13 +681,7 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
             alert(err);
             console.error(err);
         });
-    }
-
-    $scope.insert = function() {
-
-      console.log(sharedProperties.getProperty());
-
-
+        selectAllFromTable();
     }
 
     $scope.select = function(favorite) {
@@ -759,16 +743,11 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
         console.log(data)
     
         for(var j = 0;j<trains.length;j = j +1) {
-    
-    
           for(var i = 0; i < trains[j].timeTableRows.length; i = i + 1) {
             if(trains[j].timeTableRows[i].stationShortCode == departureShortCode && trains[j].timeTableRows[i].type =="DEPARTURE") {
               console.log("lähtöaika: " + trains[j].timeTableRows[i].scheduledTime)
-    
               trains[j].depTime = formatDateToString(trains[j].timeTableRows[i].scheduledTime);
-    
             } else if (trains[j].timeTableRows[i].stationShortCode == destinationShortCode && trains[j].timeTableRows[i].type =="ARRIVAL") {
-    
               trains[j].desTime = formatDateToString(trains[j].timeTableRows[i].scheduledTime);
             }
           }
@@ -821,5 +800,4 @@ function formatDateToString(date) {
     var time = hours + ':' + minutes;
 
     return time;
-
 }

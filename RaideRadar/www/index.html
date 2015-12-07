@@ -156,7 +156,7 @@
           <div>
             <div class="list" id="favoritesHead">
               <div class="item item-button-right">
-                <a id="favRow"> <p id="favLeft">Lähtöasema</p> <p id="favCenter">-</p> <p id="favRight">Määränpääasema</p></a>
+                <a> <p>Lähtöasema - Määränpääasema</p></a>
                 <button class="button button-balanced" ng-click='refresh(favorite)'>
                   <i class="icon ion-loop"></i>
                 </button>
@@ -165,7 +165,7 @@
           </div> 
           <div class="list" id="favorites" ng-repeat="favorite in favArray">
             <div class="item item-button-right">
-              <a id="favRow" ng-click="select(favorite)"> <p id="favLeft">{{ favorite.fromStation }}</p> <p id="favCenter">-</p> <pid="favRight">{{ favorite.toStation }}</p></a>
+              <a ng-click="select(favorite)"> <p>{{ favorite.fromStation }} - {{ favorite.toStation }}</p></a>
               <button class="button button-assertive" ng-click='delete(favorite)'>
                 <i class="icon ion-ios-trash"></i>
               </button>
