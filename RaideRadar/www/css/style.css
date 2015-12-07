@@ -1,7 +1,6 @@
 body {
 	font-family: 'Montserrat', sans-serif;
     padding: 0;
-    overflow-y: scroll;
 }
 
 /*
@@ -81,6 +80,10 @@ th {
 
 .scroll {
   height: 100%;
+}
+
+#content {
+    overflow: hidden;
 }
 
 #markerContent {
@@ -247,4 +250,8 @@ h4 {
 #favRow {
     padding: 0px;
     height: auto;
+}
+
+#timeInfo h2, h4 {
+    margin: 5px;
 }

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<widget id="com.ionicframework.raideradar320066" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-  <name>RaideRadar</name>
+<widget id="com.ionicframework.raideradar320066" version="1.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+  <name>Junatutka</name>
   <description>&#xD;&#xD;
-        An Ionic Framework and Cordova project.&#xD;&#xD;
+        Application to see information on train timetables and train stations.&#xD;&#xD;
     </description>
   <author email="hi@ionicframework" href="http://ionicframework.com/">&#xD;&#xD;
-      Ionic Framework Team&#xD;&#xD;
+      Toni Nahkala | Roope Rantanen&#xD;&#xD;
     </author>
   <content src="index.html"/>
   <access origin="*"/>
