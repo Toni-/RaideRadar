@@ -37,7 +37,6 @@ h4 {
 }
 
 #trainlist-item {
-    border: solid black 0px;
 
     padding-top: 0px;
     padding-bottom: 0px;
@@ -68,6 +67,7 @@ h4 {
 #trainimg img {
     max-height: 80px;
     max-width: 80px;
+
 }
 
 #train-time {
@@ -80,21 +80,61 @@ h4 {
 }
 
 #depStation {
-    font-size: 5vw;
+   /*font-size: 5vw;*/
+    height: 15px;
 
 }
 
 #desStation {
-    font-size: 5vw;
+
+    height: 15px;
 
 }
 
 #trainprogressed {
-    min-width: 0.001em;
-    background-color: #00ff00;
+    min-width: 1px;
+    background-color: #5bc35f;
+    padding: 0px;
+    margin: 0px;
+    border-left-min-width: 0.001em;
+    border-left: solid white 0.1em;
 }
 
+
 #trainnotprogressed {
-    min-width: 0.001em;
+    min-width: 1px;
     background-color: #aa55ee;
+    padding: 0px;
+    margin: 0px;
+    border-left-min-width: 0.001em;
+    border-left: solid white 0.1em;
+}
+
+#progress-label {
+    margin: 3px;
+    font-size: 10px;
+    max-height: 30px;
+}
+
+#stationRow {
+    margin: 0px;
+    padding: 0px;
+    height: 15px;
+}
+
+#isOnRoute p {
+    text-align: center;
+    font-size: 15px;
+}
+
+#wagonInfo p {
+    font-family: 'Montserrat', sans-serif;
+}
+#wagonDesc p {
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+}
+
+#wagonDesc {
+    padding-top: 20px;
 }
