@@ -118,7 +118,7 @@
                         </button>
                         <ion-scroll zooming="false" direction="y" style="height: 700px">
                             <div class="list">
-                                <li class="item trains" id="trainlist-item" ng-repeat="train in data.trains" ng-click="trainClicked({{train, data.departure, data.destination}})" > <a id="trainbutton" class="button icon icon-right ion-chevron-right button-block" 
+                                <li class="item trains" id="trainlist-item" ng-repeat="train in data.trains" ng-click="trainClicked(train, data.departure, data.destination)" > <a id="trainbutton" class="button icon icon-right ion-chevron-right button-block" 
                                   href="#/tab/details"><text-e id="train-time">{{train.depTime}} - {{train.desTime}}</text-e> <text-e id="train-name" align="right">{{train.trainType}}{{train.trainNumber}}</text-e></a></li>
                             </div>
                         </ion-scroll>
@@ -152,21 +152,20 @@
   <script id="templates/contact.html" type="text/ng-template">
     <ion-view title="Suosikit">
       <ion-content>
-        <h2 id="favoriteHeader"> Suosikit </h2>
         <div>
           <div>
             <div class="list" id="favoritesHead">
               <div class="item item-button-right">
-                <a ng-click="select(favorite)"> Lähtöasema - Määränpääasema</a>
+                <a id="favRow"> <p id="favLeft">Lähtöasema</p> <p id="favCenter">-</p> <p id="favRight">Määränpääasema</p></a>
                 <button class="button button-balanced" ng-click='refresh(favorite)'>
-                  <i class="icon ion-ios-refresh"></i>
+                  <i class="icon ion-loop"></i>
                 </button>
               </div>
             </div>
           </div> 
           <div class="list" id="favorites" ng-repeat="favorite in favArray">
             <div class="item item-button-right">
-              <a ng-click="select(favorite)"> {{ favorite.fromStation }} - {{ favorite.toStation }}</a>
+              <a id="favRow" ng-click="select(favorite)"> <p id="favLeft">{{ favorite.fromStation }}</p> <p id="favCenter">-</p> <pid="favRight">{{ favorite.toStation }}</p></a>
               <button class="button button-assertive" ng-click='delete(favorite)'>
                 <i class="icon ion-ios-trash"></i>
               </button>

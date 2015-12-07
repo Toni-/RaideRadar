@@ -157,30 +157,43 @@ app.factory('StationHelper', function($q, $timeout) {
 
 // Map Controller
 app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, sharedProperties) {
-/*
-  $scope.$on("handleReload", function() {
-        $window.location.reload();
-    });
-*/
-
-
 
   var options = { timeout: 10000, enableHighAccuracy: true };
 
   $cordovaGeolocation.getCurrentPosition(options).then(function(position){
+    mapInit(true, position);
+  }, function(error){
+    console.log("Could not get location");
+    mapInit(false, null);
+  });
 
-    var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+  function mapInit(locationFound, position) {
+    var latLng;
+    var mapOptions;
 
-    var mapOptions = {
-      center: latLng,
-      zoom: 9,
-      streetViewControl: false,
-      mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
+    if (locationFound) {
+      latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+  
+      mapOptions = {
+        center: latLng,
+        zoom: 9,
+        streetViewControl: false,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      };
+    } else {
+      latLng = new google.maps.LatLng(61.8807983, 24.7636392);
+  
+      mapOptions = {
+        center: latLng,
+        zoom: 6,
+        streetViewControl: false,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      };
+    }
 
     $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
      
-    var markers = [];
+    //var markers = [];
     var image = {
       url: 'img/marker32.png'
     };
@@ -199,7 +212,7 @@ app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, share
            title: location.stationName,
            icon: image
         });
-        markers.push(marker);
+        //markers.push(marker);
         marker.setMap($scope.map);
 
         markerInfo(marker, stations[i].stationShortCode, stations[i].stationName);
@@ -207,17 +220,14 @@ app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, share
     }
 
     $scope.$on('$stateChangeSuccess', function() {
-    // TODO: this is a hack...
-    $interval(function() {
-      console.log("map fix");
-        //$scope.map.invalidateSize();
-      google.maps.event.trigger($scope.map, 'resize');
-    }, 500, 1);
-});
+      $interval(function() {
+        console.log("map fix");
+          //$scope.map.invalidateSize();
+        google.maps.event.trigger($scope.map, 'resize');
+      }, 500, 1);
+    });
+  }
 
-  }, function(error){
-    console.log("Could not get location");
-  });
 });
 
 function markerInfo(marker, shortCode, stationName) {
@@ -232,6 +242,7 @@ function markerInfo(marker, shortCode, stationName) {
     infowindow.close();
     getStation(marker, shortCode, stationName);
     infowindow.open(marker.get('map'), marker);
+    marker.get('map').setCenter(marker.getPosition());
     //infowindow.setContent();
   });
 }
@@ -610,54 +621,53 @@ $scope.toTimeChanged = function() {
 //tekee rajapintapyynnön asemien tunnuskoodien avulla
   $scope.searchForTrains = function(station) {
 
-  $scope.showFavoriteButton = true;
-  var queryString = '';
-
-  if(document.getElementById('fromTime').value != null) {
-    console.log("fromtime" + document.getElementById('fromTime').value)
-    queryString += '&from=' + document.getElementById('fromTime').value + 'T00:00:01.564Z';
-  }
-
-  if(document.getElementById('toTime').value != null && document.getElementById('toTime').value != null) {
-    console.log("totime" + document.getElementById('toTime').value)
-    queryString += '&to=' +document.getElementById('toTime').value + 'T23:59:59.564Z';
-  }
-
-  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
-    $scope.data.trains = data;
-    console.log(data)
-
-    for(var j = 0;j<$scope.data.trains.length;j = j +1) {
-
-
-      for(var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
-        if($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type =="DEPARTURE") {
-          console.log("lähtöaika: " + $scope.data.trains[j].timeTableRows[i].scheduledTime)
-
-          $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
-
-        } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type =="ARRIVAL") {
-
-          $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
+    var queryString = '';
+  
+    if(document.getElementById('fromTime').value != null) {
+      console.log("fromtime" + document.getElementById('fromTime').value)
+      queryString += '&from=' + document.getElementById('fromTime').value + 'T00:00:01.564Z';
+    }
+  
+    if(document.getElementById('toTime').value != null && document.getElementById('toTime').value != null) {
+      console.log("totime" + document.getElementById('toTime').value)
+      queryString += '&to=' +document.getElementById('toTime').value + 'T23:59:59.564Z';
+    }
+  
+    $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
+      $scope.data.trains = data;
+      console.log(data)
+  
+      for(var j = 0;j<$scope.data.trains.length;j = j +1) {
+  
+  
+        for(var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
+          if($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type =="DEPARTURE") {
+            console.log("lähtöaika: " + $scope.data.trains[j].timeTableRows[i].scheduledTime)
+  
+            $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
+  
+          } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type =="ARRIVAL") {
+  
+            $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
+          }
         }
       }
-    }
-
-    if($scope.data.trains != null) {
-      trainsFound = true;
-      console.log("flalflöfalöaflöfalöföafffafa");
-    }
-
-  });
+  
+      if($scope.data.trains != null) {
+        trainsFound = true;
+      }
+  
+    });
   }
 
 
 }]);
 
-app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', function($scope, $cordovaSQLite, sharedProperties) {
+app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ionicPopup', '$http', function($scope, $cordovaSQLite, sharedProperties, $ionicPopup, $http) {
     //var objToInsert = sharedProperties.getProperty();
     var objToInsert = {};
     $scope.favArray = [];
+    var trains;
 
     $scope.$on("handleBroadcast", function() {
         objToInsert = {"toStation":       sharedProperties.toStation, 
@@ -693,12 +703,16 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', functi
     $scope.select = function(favorite) {
         console.log("selcted to " + favorite.toStation + " " + favorite.toStationCode +
           " - from " + favorite.fromStation + " " + favorite.fromStationCode);
+        
+        fetchTrainData(favorite);
+
     }
 
     $scope.refresh = function(favorite) {
         selectAllFromTable();
     }
 
+    // Delete selected item from the database
     $scope.delete = function(favorite) {
         console.log("delete  = " + favorite.id);
         var query = "DELETE FROM favorites WHERE id = ?";
@@ -710,6 +724,61 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', functi
         });
     }
 
+    function createPopup(trains, favorite) {
+      console.log("back ");
+
+      var output = "<table class='pure-table-horizontal' id='favoriteTable'> <thead></thead><tr><th></th><th></th><th></th><th></th></tr><tbody>";
+      
+      for (var i = 0; i < trains.length; i++) {
+        output += "<tr>"
+        output += "<td id='favoriteTd'><text-e id='train-time'>" + trains[i].depTime + 
+                  "</text-e></td><td id='favoriteTd'><text-e id='train-time'>-</text-e></td><td id='favoriteTd'><text-e id='train-time'>" + 
+                  trains[i].desTime + "</text-e></td>";
+        output += "<td id='favoriteTd'><text-e id='train-name'>" + trains[i].trainType + trains[i].trainNumber + "</text-e></td>";
+        output += "</tr>";
+      }
+
+      output += "</tbody></table>";
+
+      var alertPopup = $ionicPopup.alert({
+        title: favorite.fromStation + " - " + favorite.toStation,
+        template: output
+        });
+        alertPopup.then(function(res) {
+          console.log("then");
+      });
+    }
+
+    function fetchTrainData(favorite) {
+      var departureShortCode   = favorite.fromStationCode;
+      var destinationShortCode = favorite.toStationCode;
+      var queryString = '';
+    
+      $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
+        trains = data;
+        console.log(data)
+    
+        for(var j = 0;j<trains.length;j = j +1) {
+    
+    
+          for(var i = 0; i < trains[j].timeTableRows.length; i = i + 1) {
+            if(trains[j].timeTableRows[i].stationShortCode == departureShortCode && trains[j].timeTableRows[i].type =="DEPARTURE") {
+              console.log("lähtöaika: " + trains[j].timeTableRows[i].scheduledTime)
+    
+              trains[j].depTime = formatDateToString(trains[j].timeTableRows[i].scheduledTime);
+    
+            } else if (trains[j].timeTableRows[i].stationShortCode == destinationShortCode && trains[j].timeTableRows[i].type =="ARRIVAL") {
+    
+              trains[j].desTime = formatDateToString(trains[j].timeTableRows[i].scheduledTime);
+            }
+          }
+        }
+
+        createPopup(trains, favorite);
+      });
+    }
+
+    // Get all data from the database
     function selectAllFromTable() {
         $scope.favArray = [];
         var query  = "SELECT * FROM favorites";

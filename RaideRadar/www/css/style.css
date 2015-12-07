@@ -19,10 +19,6 @@ h4 {
 	text-align: center;
 }
 
-#favoriteHeader {
-	text-align: center;
-}
-
 #favorites {
 
 }
@@ -30,6 +26,11 @@ h4 {
 #favoriteTable {
 	width: 95%;
 	margin: 0 auto;
+    border: 0px !important;
+}
+
+#favoriteTd {
+    border-bottom: 0px !important;
 }
 
 #favoriteTableHead {
@@ -97,4 +98,22 @@ h4 {
 #trainnotprogressed {
     min-width: 0.001em;
     background-color: #aa55ee;
+}
+
+#favLeft {
+    text-align: left;
+}
+
+#favCenter {
+
+}
+
+#favRight {
+    text-align: right;
+ 
+}
+
+#favRow {
+    padding: 0px;
+    height: auto;
 }
