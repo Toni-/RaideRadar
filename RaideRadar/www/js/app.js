@@ -407,12 +407,6 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
     tempDeparture   = departure;
     tempDestination = destination;
 
-    console.log("dep " + departure + " - dest " + destination);
-
-    console.log(train);
-    console.log(document)
-    console.log(document.getElementById("route"))
-
 // odottaa että tabin html-template on latautunut,
 // jonka jälkeen asettaa junan tiedot html-tiedostoon
     function waitForTabLoading() {
@@ -426,16 +420,18 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
     console.log("swag:" + destinationShortCode);
     var detailHTML = '<div class="row">'
-    var progressBarHTML = '<div class="row"><div class="col col-20"></div>'
+    var progressBarHTML = '<div class="row"><div class="col col-10" id="progress-label" align="center"><p>' + departureShortCode + '</p></div>'
+    var stationRowHTML = '<div class="row" ><div class="col col-50" id="stationRow" align="center">' + departureShortCode + '</div><div class="col col-50" id="stationRow" align="center">' + destinationShortCode + '</div></div>'
+    var departureFound = false;
 
     var c = 0;
     for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
 
-      if(!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop) {
+      if(!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
         c = c + 1
         console.log('ewd' + c);
         progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
-      } else if($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop) {
+      } else if($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
         progressBarHTML += '<div class="col" id="trainprogressed"></div>'
         c = c + 1
         console.log('ii' + c);
@@ -444,30 +440,33 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
       if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
         console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
 
-        detailHTML = detailHTML + '<div class="col"><h3 align="center">Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
-
+        detailHTML = detailHTML + '<div class="col"><h3 align="center">Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime,true, ":") + '</h1></div>';
+        departureFound = true;
       } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") {
 
 
-        detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime) + '</h1></div>';
+        detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h1></div>';
 
       if(i == train.timeTableRows.length-1) {
         console.log('yay!');
-        progressBarHTML += '<div class="col col-20"></div></div>'
+        progressBarHTML += '<div class="col col-10" id="progress-label" align="center"><p>' + destinationShortCode + '</p></div></div>'
+
+      document.getElementById("progressBar").innerHTML = progressBarHTML
       }
 
    }
 
 
-
    if(train.runningCurrently) {
-    document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna on liikkeellä</h3>"
-    document.getElementById("progressBar").innerHTML = progressBarHTML
+    document.getElementById("isOnRoute").innerHTML = "<p>Juna ei ole pysähtynyt</p>"
+    
    } else {
-    document.getElementById("isOnRoute").innerHTML = "<h3 align='center'>Juna ei ole liikkeellä</h3>"
+    document.getElementById("isOnRoute").innerHTML = "<p>Juna on pysähtynyt</p>"
    }
 
   }
+
+  document.getElementById("stationRow").innerHTML = stationRowHTML
 
   var compPromise = getTrainComposition(train);
 
@@ -498,10 +497,13 @@ getTrainComposition = function(train) {
 }
 
 setWagonData = function(data, callback) {
+  document.getElementById("wagonDesc").innerHTML = "";
 
   var wagonCount = 0;
   var wagonHTML = '';
   var forcount = 0;
+  var catCheck = false;
+
   if(data.journeySections != null) {
   console.log("lenght :" + data.journeySections.length);
     for(var i = 0; i<data.journeySections.length; i = i + 1) {
@@ -510,7 +512,16 @@ setWagonData = function(data, callback) {
 
           if(data.journeySections[i].wagons != null) {
             wagonCount = data.journeySections[i].wagons.length
-            console.log("vaunuja oikeessa mestassa: " + data.journeySections[i].wagons.length);
+
+            for(var j = 0;j<data.journeySections[i].wagons.length;j++) {
+              console.log(data.journeySections[i].wagons[j]);
+
+              if(data.journeySections[i].wagons[j].catering && !catCheck) {
+                 document.getElementById("wagonDesc").innerHTML += '<p>Junassa on ravintolavaunu</p>'
+                 catCheck = true;
+                 console.log("catCheck");
+              }
+            }
           }
 
           forcount += 1
@@ -518,7 +529,6 @@ setWagonData = function(data, callback) {
           console.log("forcoutn: " + forcount)
 
       } else if(data.journeySections[i].wagons != null) {
-          console.log("vaunumäärä" + data.journeySections[i].beginTimeTableRow.stationShortCode + "ssä: " + data.journeySections[i].wagons.length)
           if(wagonCount == 0) {
 
            wagonCount = data.journeySections[i].wagons.length
@@ -529,6 +539,7 @@ setWagonData = function(data, callback) {
 
       if(i == data.journeySections.length-1) {
           console.log("let's call callback!")
+          document.getElementById("wagonDesc").innerHTML += '<p>Vaunuja junassa: ' + wagonCount + '</p>';
           callback(wagonCount);
 
       }
@@ -540,9 +551,11 @@ setWagonData = function(data, callback) {
 
 setWagonImages = function(wagonCount) {
 
+  
+
   if(wagonCount != 0) {
 
-  wagonHTML = '<div align="center"><h3>Vaunuja junassa: ' + wagonCount + '</div><div class="row">'
+    var wagonHTML = "<div class='row'>";
 
 
     for(var j = 0;j<wagonCount;j = j + 1) {
@@ -550,13 +563,12 @@ setWagonImages = function(wagonCount) {
         wagonHTML += '<div class="col" id="trainimg"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
         document.getElementById("wagonInfo").innerHTML = wagonHTML
       } else {
-         console.log("we here" + j)
         wagonHTML += '<div class="col" id="trainimg"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
       }
     }
 
   } else {
-    document.getElementById("wagonInfo").innerHTML = '<div align="center"><h3>Vaunutietoja ei saatavilla</h3>'
+    document.getElementById("wagonInfo").innerHTML = '<div align="center"><p>Vaunutietoja ei saatavilla</p>'
   }
 }
 
@@ -613,32 +625,40 @@ $scope.toTimeChanged = function() {
   $scope.showFavoriteButton = true;
   var queryString = '';
 
-  if(document.getElementById('fromTime').value != null) {
+  if(document.getElementById('fromTime').value != "") {
     console.log("fromtime" + document.getElementById('fromTime').value)
-    queryString += '&from=' + document.getElementById('fromTime').value + 'T00:00:01.564Z';
+    queryString += '&from=' + document.getElementById('fromTime').value + ':00.000Z';
+  } else {
+    queryString += '&from=' + getTimeWithThreshold().toString();
+    console.log("date with threshold:" + queryString);
   }
 
-  if(document.getElementById('toTime').value != null && document.getElementById('toTime').value != null) {
+  if(document.getElementById('toTime').value != "" && document.getElementById('toTime').value != "") {
     console.log("totime" + document.getElementById('toTime').value)
-    queryString += '&to=' +document.getElementById('toTime').value + 'T23:59:59.564Z';
+    queryString += '&to=' +document.getElementById('toTime').value + ':00.000Z';
   }
 
   $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
-    $scope.data.trains = data;
+    
     console.log(data)
+    console.log(data.code)
+
+    if(data.code != "TRAIN_NOT_FOUND") {
+    $scope.data.trains = data;
+
 
     for(var j = 0;j<$scope.data.trains.length;j = j +1) {
 
 
       for(var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
         if($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type =="DEPARTURE") {
-          console.log("lähtöaika: " + $scope.data.trains[j].timeTableRows[i].scheduledTime)
 
-          $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
+          $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
+          $scope.data.trains[j].date = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, false, ".");
 
         } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type =="ARRIVAL") {
 
-          $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime);
+          $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
         }
       }
     }
@@ -647,6 +667,10 @@ $scope.toTimeChanged = function() {
       trainsFound = true;
       console.log("flalflöfalöaflöfalöföafffafa");
     }
+
+  } else {
+    alert("Hei! Junia ei löytynyt... Tarkista syöte ja huomioi, että Junatutka ei tällä hetkellä tue jatkoyhteyksiä.")
+  }
 
   });
   }
@@ -732,11 +756,31 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', functi
     }
 }]);
 
-function formatDateToString(date) {
-    var d = new Date(date);
-    var hours = '';
-    var minutes = ''
+function getTimeWithThreshold() {
 
+  var d = new Date()
+  var year = '';
+  var month = '';
+  var day = '';
+  var hour = '';
+  var minutes = '';
+  var seconds = '';
+  var millis = '';
+
+  d.setHours(d.getHours()-3);
+    
+    year = d.getFullYear().toString();
+    
+    if(d.getMonth()<10) {
+      month = '0' + (d.getMonth()+1).toString();
+    } else {
+      month = (d.getMonth()+1).toString();
+    }
+    if(d.getDate()<10) {
+      day = '0' + d.getDate().toString();
+    } else {
+      day = d.getDate().toString();
+    }
     if(d.getHours()<10) {
       hours = '0' + d.getHours().toString();
     } else {
@@ -749,8 +793,62 @@ function formatDateToString(date) {
       minutes = d.getMinutes().toString();
     }
 
-    var time = hours + ':' + minutes;
+   
+    seconds = d.getMinutes().toString();
+    
+
+    if(d.getMilliseconds()<10) {
+      millis = '00' + d.getMilliseconds().toString();
+    } else if(d.getMilliseconds()<100) {
+      millis = '0' + d.getMilliseconds().toString();
+    }else {
+      millis = d.getMilliseconds().toString();
+    }
+
+    var returntime = year + "-" + month + '-' + day + 'T' + hours + ':' + minutes + ':' + seconds + '.' + millis + 'Z'
+    return returntime;
+
+}
+
+function formatDateToString(date, isTime, separator) {
+    var d = new Date(date);
+    var hours = '';
+    var minutes = ''
+    var day = ''
+    var month = ''
+    var year = ''
+    if(isTime) {
+      if(d.getHours()<10) {
+      hours = '0' + d.getHours().toString();
+    } else {
+      hours = d.getHours().toString();
+    }
+
+    if(d.getMinutes()<10) {
+      minutes = '0' + d.getMinutes().toString();
+    } else {
+      minutes = d.getMinutes().toString();
+    }
+
+    var time = hours + separator + minutes;
 
     return time;
+  } else {
+     
+        day =  d.getDate().toString();
+        console.log("day:" + day);
+        
+
+      
+        month =  (d.getMonth() + 1).toString();
+
+        year = d.getFullYear().toString().substring(2,4);
+      
+
+        var time = day + separator + month + separator + year;
+
+     return time;
+  }
+    
 
 }
