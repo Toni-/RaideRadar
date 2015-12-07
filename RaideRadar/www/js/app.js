@@ -21,6 +21,8 @@ app.run(function($ionicPlatform, $cordovaSQLite) {
     if(window.StatusBar) {
       StatusBar.styleDefault();
     }
+
+    // Initialize the database
     console.log($cordovaSQLite)
     db = $cordovaSQLite.openDB("favorites.db");
     $cordovaSQLite.execute(db, "CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY, fromStation VARCHAR, toStation VARCHAR, fromStationCode VARCHAR, toStationCode VARCHAR)");
@@ -56,20 +58,20 @@ app.config(function($stateProvider, $urlRouterProvider) {
         }
       }
     })
-    .state('tabs.about', {
-      url: "/about",
+    .state('tabs.map', {
+      url: "/map",
       views: {
-        'about-tab': {
-          templateUrl: "templates/about.html",
+        'map-tab': {
+          templateUrl: "templates/map.html",
           controller: "MapCtrl"
         }
       }
     })
-    .state('tabs.contact', {
-      url: "/contact",
+    .state('tabs.favorites', {
+      url: "/favorites",
       views: {
-        'contact-tab': {
-          templateUrl: "templates/contact.html",
+        'favorites-tab': {
+          templateUrl: "templates/favorites.html",
           controller: 'DBCtrl'
         }
       }
@@ -148,8 +150,9 @@ app.factory('StationHelper', function($q, $timeout) {
 app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, sharedProperties) {
 
   var options     = { timeout: 10000, enableHighAccuracy: true };
-  $scope.mapShown = false;
 
+  // Get user location, If location cannot be retrieved, 
+  // map is initialized with default position
   $cordovaGeolocation.getCurrentPosition(options).then(function(position){
     mapInit(true, position);
   }, function(error){
@@ -157,6 +160,7 @@ app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, share
     mapInit(false, null);
   });
 
+  // Initialize map location, settings and info markers
   function mapInit(locationFound, position) {
     var latLng;
     var mapOptions;
@@ -188,6 +192,11 @@ app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, share
       url: 'img/marker32.png'
     };
 
+    var infowindow = new google.maps.InfoWindow({
+      disableAutoPan: false,
+      content: "<div id='markerContent'>  </div>"
+     });
+
     // Add marker to every passanger traffic station
     for (var i = 0; i < stations.length; i++) {
       if (stations[i].passengerTraffic == true) {
@@ -205,13 +214,13 @@ app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, share
         //markers.push(marker);
         marker.setMap($scope.map);
 
-        markerInfo(marker, stations[i].stationShortCode, stations[i].stationName);
+        markerInfo(marker, stations[i].stationShortCode, stations[i].stationName, infowindow);
       }
     }
 
+    // Reload map to prevent it from being destroyed when other controllers are used
     $scope.$on('$stateChangeSuccess', function() {
       $interval(function() {
-        console.log("map fix");
           //$scope.map.invalidateSize();
         google.maps.event.trigger($scope.map, 'resize');
       }, 500, 1);
@@ -220,25 +229,21 @@ app.controller('MapCtrl', function($scope, $interval, $cordovaGeolocation, share
 
 });
 
-function markerInfo(marker, shortCode, stationName) {
-  var infowindow = new google.maps.InfoWindow({
-      disableAutoPan: false,
-      content: "<div id='markerContent'>  </div>"
-  });
+// Set a click listener for the info marker
+function markerInfo(marker, shortCode, stationName, infowindow) {
 
-//http://rata.digitraffic.fi/api/v1/live-trains?station=HKI
-  marker.addListener('click', function() {
-    console.log("Asema lyhenne " + shortCode);
-    infowindow.close();
-    getStation(marker, shortCode, stationName);
-    infowindow.open(marker.get('map'), marker);
-    marker.get('map').setCenter(marker.getPosition());
-    //infowindow.setContent();
-  });
+    marker.addListener('click', function() {
+      console.log("Asema lyhenne " + shortCode);
+      infowindow.close();
+      getStation(marker, shortCode, stationName);
+      infowindow.open(marker.get('map'), marker);
+      marker.get('map').setCenter(marker.getPosition());
+      //infowindow.setContent();
+    });
 }
 
-// Get stations and pass the info to the selected marker
-function getStation(marker, shortCode, stationName) {
+  // Get stations and pass the info to the selected marker
+  function getStation(marker, shortCode, stationName) {
     var xmlHttp = new XMLHttpRequest();
 
     xmlHttp.onreadystatechange = function() {
@@ -255,7 +260,7 @@ function getStation(marker, shortCode, stationName) {
       shortCode + "&arrived_trains=5&arriving_trains=5&departed_trains=5&departing_trains=5",
       true);
     xmlHttp.send(null);
-}
+  }
 
 // Parse station data and display the information
 function setInfoMarkerText(shortCode, stationName) {
@@ -267,22 +272,24 @@ function setInfoMarkerText(shortCode, stationName) {
 
   // Iterate through all the trains going through the selected station
   // The outer loop iterates through trains and the inner loop iterates through the stations
-  // that are on the trains path
+  // that are on the train's path
   for (var train = 0; train < selectedStation.length; train++) {
       if (selectedStation[train].trainCategory == "Long-distance" ||
           selectedStation[train].trainCategory == "Commuter" ) {
           var temp = "";
           temp    += "<table class='pure-table'><b><text-e id='train-name'>" + selectedStation[train].trainType + " " +
                                       selectedStation[train].trainNumber + "</text-e></b>" +
-                 "<thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>"
+                 "<thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>";
+
           if (typeof selectedStation[train] != 'undefined' || selectedStation[train] != null) {
             for (var station = 0; station < selectedStation[train].timeTableRows.length; station++) {
                 if (selectedStation[train].timeTableRows[station].stationShortCode == shortCode) {
                   var depTime;
                   var arrTime;
                   console.log("juna " + selectedStation[train].trainNumber + " - " + selectedStation[train].timeTableRows[station].type);
-                  if (selectedStation[train].timeTableRows[station].type == "ARRIVAL") {
 
+                  // Arrival
+                  if (selectedStation[train].timeTableRows[station].type == "ARRIVAL") {
                       temp += "<tr>";
                       var time  = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
                       arrTime   = time;
@@ -293,10 +300,13 @@ function setInfoMarkerText(shortCode, stationName) {
                       temp += "<td>" + hours + ":"  + mins + "</td>";
                   }
 
+                  // First stop
                   temp += station == 0 ? "<tr><td>Lähtöasema</td>" : "";
 
+                  // Last stop
                   temp += selectedStation[train].timeTableRows.length-1 == station ? "<td>Pääteasema</td></tr>" : "";
 
+                  // Departure
                   if (selectedStation[train].timeTableRows[station].type == "DEPARTURE") {
                       outputArr.splice(outputArr.length-1, 1);
                       var time  = new Date(selectedStation[train].timeTableRows[station].scheduledTime);
@@ -317,9 +327,9 @@ function setInfoMarkerText(shortCode, stationName) {
           }
       }
   }
-  console.log("enne - " + outputArr);
+
   outputArr.sort(sortOutput);
-  console.log("jälke - " + outputArr);
+
   for (var i = 0; i < outputArr.length; i++) {
     outputHTML += outputArr[i].tableRow;
     console.log(outputArr[i].time);
@@ -329,6 +339,7 @@ function setInfoMarkerText(shortCode, stationName) {
   document.getElementById("markerContent").innerHTML = "<h4>" + stationName + "</h4>" + "<br>" + outputHTML;
 }
 
+// Sort an array by time
 function sortOutput(a, b) {
   if (a.time > b.time) {
     return 1;
@@ -340,7 +351,7 @@ function sortOutput(a, b) {
 }
 
 // Schedule Controller
-app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', 'sharedProperties', function($scope, $http, $q, Stations, StationHelper, sharedProperties) {
+app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', 'sharedProperties', '$ionicPopup', function($scope, $http, $q, Stations, StationHelper, sharedProperties, $ionicPopup) {
   
   $scope.addedToFavorites = false;
 
@@ -564,7 +575,7 @@ setWagonImages = function(wagonCount) {
         wagonHTML += '<div class="col" id="trainimg"><img src="img/train.png" width="100%" alt="train"></img></div></div>'
         document.getElementById("wagonInfo").innerHTML = wagonHTML
       } else {
-        wagonHTML += '<div class="col" id="trainimg"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
+        wagonHTML += '<div class="col" id="trainimg" style="text-align:center;"><img src="img/wagon.png" width="100%" alt="wagon"></img></div>'
       }
     }
 
@@ -666,11 +677,15 @@ $scope.toTimeChanged = function() {
 
     if($scope.data.trains != null) {
       trainsFound = true;
-      console.log("flalflöfalöaflöfalöföafffafa");
     }
 
   } else {
-    alert("Hei! Junia ei löytynyt... Tarkista syöte ja huomioi, että Junatutka ei tällä hetkellä tue jatkoyhteyksiä.")
+      var alertPopup = $ionicPopup.alert({
+        title: "Virhe",
+        template: "Junia ei löytynyt... Tarkista syöte ja huomioi, että haku ei tällä hetkellä tue jatkoyhteyksiä."
+      });
+        alertPopup.then(function(res) {
+      });
   }
 
   });
@@ -685,6 +700,7 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
     $scope.favArray = [];
     var trains;
 
+    // Listen to a broadcast from another controller
     $scope.$on("handleBroadcast", function() {
         objToInsert = {"toStation":       sharedProperties.toStation, 
                        "toStationCode":   sharedProperties.toStationCode,
@@ -696,12 +712,12 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
 
     selectAllFromTable();   
 
+    // Insert into database
     function insert() {
         var query = "INSERT INTO favorites (toStation, toStationCode, fromStation, fromStationCode) VALUES (?,?,?,?)";
         $cordovaSQLite.execute(db, query, [objToInsert.toStation, objToInsert.toStationCode,
           objToInsert.fromStation, objToInsert.fromStationCode]).then(function(res) {
-            console.log("INSERT ID -> " + res.insertId);
-
+          console.log("INSERT ID -> " + res.insertId);
           $scope.favoriteClick = true;
         }, function (err) {
             alert(err);
@@ -710,15 +726,13 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
         selectAllFromTable();
     }
 
+    // Select a route from favorites
     $scope.select = function(favorite) {
-        console.log("selcted to " + favorite.toStation + " " + favorite.toStationCode +
-          " - from " + favorite.fromStation + " " + favorite.fromStationCode);
-        
         fetchTrainData(favorite);
-
     }
 
-    $scope.refresh = function(favorite) {
+    // Fetch all data
+    $scope.refresh = function() {
         selectAllFromTable();
     }
 
@@ -734,6 +748,7 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
         });
     }
 
+    // Create a table and insert it into a popup
     function createPopup(trains, favorite) {
       console.log("back ");
 
@@ -751,14 +766,14 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
       output += "</tbody></table>";
 
       var alertPopup = $ionicPopup.alert({
-        title: favorite.fromStation + " - " + favorite.toStation,
+        title: favorite.fromStation + " - " + favorite.toStation + "<br> Seuraavat lähdöt:",
         template: output
         });
         alertPopup.then(function(res) {
-          console.log("then");
       });
     }
-
+ 
+    // Fetch 
     function fetchTrainData(favorite) {
       var departureShortCode   = favorite.fromStationCode;
       var destinationShortCode = favorite.toStationCode;
@@ -772,9 +787,9 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
           for(var i = 0; i < trains[j].timeTableRows.length; i = i + 1) {
             if(trains[j].timeTableRows[i].stationShortCode == departureShortCode && trains[j].timeTableRows[i].type =="DEPARTURE") {
               console.log("lähtöaika: " + trains[j].timeTableRows[i].scheduledTime)
-              trains[j].depTime = formatDateToString(trains[j].timeTableRows[i].scheduledTime);
+              trains[j].depTime = formatDateToTime(trains[j].timeTableRows[i].scheduledTime);
             } else if (trains[j].timeTableRows[i].stationShortCode == destinationShortCode && trains[j].timeTableRows[i].type =="ARRIVAL") {
-              trains[j].desTime = formatDateToString(trains[j].timeTableRows[i].scheduledTime);
+              trains[j].desTime = formatDateToTime(trains[j].timeTableRows[i].scheduledTime);
             }
           }
         }
@@ -793,9 +808,9 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
               for (var i = 0; i < res.rows.length; i++) {
                 console.log("db to " + res.rows.item(i).toStation, res.rows.item(i).toStationCode,
                   res.rows.item(i).fromStation, res.rows.item(i).fromStationCode);
-                  $scope.favArray.push({"fromStation": res.rows.item(i).fromStation, 
-                      "fromStationCode": res.rows.item(i).fromStationCode, "toStation": res.rows.item(i).toStation, 
-                      "toStationCode": res.rows.item(i).toStationCode, "id": res.rows.item(i).id})
+                $scope.favArray.push({"fromStation": res.rows.item(i).fromStation, 
+                    "fromStationCode": res.rows.item(i).fromStationCode, "toStation": res.rows.item(i).toStation, 
+                    "toStationCode": res.rows.item(i).toStationCode, "id": res.rows.item(i).id})
               }
             } else {
                 console.log("No results found");
@@ -899,6 +914,26 @@ function formatDateToString(date, isTime, separator) {
 
      return time;
   }
-    
+}
 
+function formatDateToTime(date) {
+    var d = new Date(date);
+    var hours = '';
+    var minutes = ''
+
+    if(d.getHours()<10) {
+      hours = '0' + d.getHours().toString();
+    } else {
+      hours = d.getHours().toString();
+    }
+
+    if(d.getMinutes()<10) {
+      minutes = '0' + d.getMinutes().toString();
+    } else {
+      minutes = d.getMinutes().toString();
+    }
+
+    var time = hours + ':' + minutes;
+
+    return time;
 }
