@@ -47,12 +47,12 @@
         <ion-nav-view name="home-tab"></ion-nav-view>
       </ion-tab>
 
-      <ion-tab title="Asemakartta" icon="ion-map" href="#/tab/about">
-        <ion-nav-view name="about-tab"></ion-nav-view>
+      <ion-tab title="Asemakartta" icon="ion-map" href="#/tab/map">
+        <ion-nav-view name="map-tab"></ion-nav-view>
       </ion-tab>
 
-      <ion-tab title="Suosikit" icon="ion-ios-heart" ui-sref="tabs.contact">
-        <ion-nav-view name="contact-tab"></ion-nav-view>
+      <ion-tab title="Suosikit" icon="ion-ios-heart" ui-sref="tabs.favorites">
+        <ion-nav-view name="favorites-tab"></ion-nav-view>
       </ion-tab>
 
     </ion-tabs>
@@ -114,12 +114,12 @@
                      <!-- painike ja lista junien hakuun. painike näkyy vain kun tekstikenttiä ei muokata -->
                      <div class="row">
                         <div class="col">
-                        <button class="button button-royal ion-chevron-right button-block" ng-show="editingStopped" ng-click="searchForTrains()">
+                        <button class="button button-royal ion-android-arrow-forward button-block" ng-show="editingStopped" ng-click="searchForTrains()">
                         Hae junat
                         </button>
-                        <ion-scroll zooming="false" direction="y" style="height: 700px">
+                        <ion-scroll zooming="false" direction="y" style="height: 20%">
                             <div class="list">
-                                <li class="item trains" id="trainlist-item" ng-repeat="train in data.trains" ng-click="trainClicked(train, data.departure, data.destination)" > <a id="trainbutton" class="button icon icon-right ion-chevron-right button-block" 
+                                <li class="item trains" id="trainlist-item" ng-repeat="train in data.trains" ng-click="trainClicked(train, data.departure, data.destination)" > <a id="trainbutton" class="button icon-right ion-android-arrow-forward button-block" 
                                   href="#/tab/details"><text-e id="train-date" ng-align="left">{{train.date}}</text-e><text-e id="train-time">{{train.depTime}} - {{train.desTime}}</text-e> <text-e id="train-name" align="right">{{train.trainType}}{{train.trainNumber}}</text-e></a></li>
                             </div>
                         </ion-scroll>
@@ -143,11 +143,11 @@
           <div id="wagonInfo"></div>
           <div class="row">
             <div class="col">
-            <a class="button button-block icon ion-chevron-left" href="#/tab/home"> Takaisin</a>
+            <a class="button button-block ion-android-arrow-back" id="backButton" href="#/tab/home"> Takaisin</a>
             </div>
             <div class="col">
             <button class="button button-block {{ addedToFavorites ? 'button-balanced ion-checkmark-round' : 'button-assertive ion-ios-heart' }}" ng-click="addToFavorites()" ng-disabled="addedToFavorites">
-              {{ addedToFavorites ? "Tämä reitti lisätty suosikiksi" : "Lisää suosikiksi" }}
+              {{ addedToFavorites ? "Lisätty" : "Suosikiksi" }}
             </button>
             </div>
           
@@ -157,23 +157,24 @@
 
 
 
-  <script id="templates/contact.html" type="text/ng-template">
+  <script id="templates/favorites.html" type="text/ng-template">
     <ion-view title="Suosikit">
       <ion-content>
         <div>
           <div>
-            <div class="list" id="favoritesHead">
-              <div class="item item-button-right">
-                <a> <p>Lähtöasema - Määränpääasema</p></a>
-                <button class="button button-balanced" ng-click='refresh(favorite)'>
+            <div class="list">
+              <div class="item item-button-right" id="listHead">
+                <a> <p><b>Lähtöasema - Määränpääasema</b></p></a>
+                <button class="button button-balanced" ng-click='refresh()'>
                   <i class="icon ion-loop"></i>
                 </button>
               </div>
             </div>
           </div> 
-          <div class="list" id="favorites" ng-repeat="favorite in favArray">
-            <div class="item item-button-right">
-              <a ng-click="select(favorite)"> <p>{{ favorite.fromStation }} - {{ favorite.toStation }}</p></a>
+          <div class="list favList" ng-repeat="favorite in favArray">
+            <div class="item item-button-right" id="favoritesList">
+              <a id="favorites" ng-click="select(favorite)">
+              <p >{{ favorite.fromStation }} - {{ favorite.toStation }}</p></a>
               <button class="button button-assertive" ng-click='delete(favorite)'>
                 <i class="icon ion-ios-trash"></i>
               </button>
@@ -183,7 +184,6 @@
       </ion-content>
     </ion-view>
   </script>
-
 
     </body>
 </html>
