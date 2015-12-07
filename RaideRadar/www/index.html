@@ -118,7 +118,7 @@
                         Hae junat
                         </button>
                         <ion-scroll zooming="false" direction="y" style="height: 700px">
-                            <div class="list">
+                            <div class="list" id="trainlist">
                                 <li class="item trains" id="trainlist-item" ng-repeat="train in data.trains" ng-click="trainClicked(train, data.departure, data.destination)" > <a id="trainbutton" class="button icon icon-right ion-chevron-right button-block" 
                                   href="#/tab/details"><text-e id="train-date" ng-align="left">{{train.date}}</text-e><text-e id="train-time">{{train.depTime}} - {{train.desTime}}</text-e> <text-e id="train-name" align="right">{{train.trainType}}{{train.trainNumber}}</text-e></a></li>
                             </div>
