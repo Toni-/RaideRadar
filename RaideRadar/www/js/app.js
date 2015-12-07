@@ -470,12 +470,12 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
         if (train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type == "DEPARTURE") {
           console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
 
-          detailHTML = detailHTML + '<div class="col"><h4 align="center">Lähtöaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
+          detailHTML = detailHTML + '<div class="col"><h4 align="center">Lähtöaika </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
           departureFound = true;
         } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type == "ARRIVAL") {
           console.log("destinationFound")
 
-          detailHTML = detailHTML + '<div class="col"><h4 align="center">Saapumisaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
+          detailHTML = detailHTML + '<div class="col"><h4 align="center">Saapumisaika </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
         }
         if (i == train.timeTableRows.length - 1) {
           console.log('yay!');
