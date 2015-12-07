@@ -160,21 +160,20 @@
   <script id="templates/contact.html" type="text/ng-template">
     <ion-view title="Suosikit">
       <ion-content>
-        <h2 id="favoriteHeader"> Suosikit </h2>
         <div>
           <div>
             <div class="list" id="favoritesHead">
               <div class="item item-button-right">
-                <a ng-click="select(favorite)"> Lähtöasema - Määränpääasema</a>
+                <a> <p>Lähtöasema - Määränpääasema</p></a>
                 <button class="button button-balanced" ng-click='refresh(favorite)'>
-                  <i class="icon ion-ios-refresh"></i>
+                  <i class="icon ion-loop"></i>
                 </button>
               </div>
             </div>
           </div> 
           <div class="list" id="favorites" ng-repeat="favorite in favArray">
             <div class="item item-button-right">
-              <a ng-click="select(favorite)"> {{ favorite.fromStation }} - {{ favorite.toStation }}</a>
+              <a ng-click="select(favorite)"> <p>{{ favorite.fromStation }} - {{ favorite.toStation }}</p></a>
               <button class="button button-assertive" ng-click='delete(favorite)'>
                 <i class="icon ion-ios-trash"></i>
               </button>

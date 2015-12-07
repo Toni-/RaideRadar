@@ -5,6 +5,19 @@ body {
 #map {
   width: 100%;
   height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
+
+#load {
+    margin: 0 auto;
+    text-align:center;
+    vertical-align: middle;
+    position:relative;
+    height: 100%;
+    width: 100%;
 }
 
 .scroll {
@@ -12,14 +25,11 @@ body {
 }
 
 #markerContent {
-    
+    font-family: 'Montserrat', sans-serif;
 }
+
 
 h4 {
-	text-align: center;
-}
-
-#favoriteHeader {
 	text-align: center;
 }
 
@@ -30,6 +40,11 @@ h4 {
 #favoriteTable {
 	width: 95%;
 	margin: 0 auto;
+    border: 0px !important;
+}
+
+#favoriteTd {
+    border-bottom: 0px !important;
 }
 
 #favoriteTableHead {
@@ -137,4 +152,22 @@ h4 {
 
 #wagonDesc {
     padding-top: 20px;
+}
+
+#favLeft {
+    text-align: left;
+}
+
+#favCenter {
+
+}
+
+#favRight {
+    text-align: right;
+ 
+}
+
+#favRow {
+    padding: 0px;
+    height: auto;
 }
