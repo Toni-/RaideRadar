@@ -129,6 +129,11 @@ h4 {
     height: auto;
 }
 
+#trainlist {
+
+    padding-bottom:500px;
+
+}
 #trainbutton {
     margin-top: 0px;
     height: 0px;
