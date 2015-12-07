@@ -248,3 +248,7 @@ h4 {
     padding: 0px;
     height: auto;
 }
+
+#timeInfo h2, h4 {
+    margin: 5px;
+}
