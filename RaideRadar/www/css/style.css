@@ -1,5 +1,64 @@
 body {
 	font-family: 'Montserrat', sans-serif;
+    padding: 0;
+    overflow-y: scroll;
+}
+
+/*
+    border-color: rgba(17, 17, 17, 0.09);
+    background-color: rgba(170, 170, 170, 0.18);
+    color: #444; */
+
+    /*background-color: #28A54C;*/
+::-webkit-scrollbar {
+    width:5px;
+    height:5px;
+    background-color:#f5f5f5;
+    border-left:1px solid #d2d2d2
+}
+
+::-webkit-scrollbar-thumb { 
+    border-radius:10px;
+    background:#28A54C;
+    background:-moz-linear-gradient(top,#28A54C 0%,#37D464 50%,#3CE66C 100%);
+    background:-webkit-linear-gradient(top,#28A54C 0%,#37D464 50%,#3CE66C 100%);
+    background:-o-linear-gradient(top,#28A54C 0%,#37D464 50%,#3CE66C 100%);
+    background:-ms-linear-gradient(top,#28A54C 0%,#37D464 50%,#3CE66C 100%);
+    background:linear-gradient(to bottom,#28A54C 0%,#37D464 50%,#3CE66C 100%)
+}
+
+th {
+    border-bottom: 0;
+}
+
+.list {
+    border-bottom: 0 !important;
+    border-top:    0 !important;
+    border:        0 !important;
+}
+
+.favList {
+    padding-bottom: 0px !important;
+    padding-top:    0px !important;
+}
+
+.trains {
+    border-style: none  !important;
+}
+
+.item-button-right, .trains {
+    border: 0 !important;
+}
+
+#listHead {
+    border-style: none  !important;
+    margin:         0   !important;
+    border:         0   !important;
+    border-top:     0   !important;
+    border-bottom:  0   !important;
+    padding-top:    0   !important;
+    padding-bottom: 0   !important;
+    margin-bottom:  4px !important;
 }
 
 #map {
@@ -28,9 +87,21 @@ body {
     font-family: 'Montserrat', sans-serif;
 }
 
-
 h4 {
 	text-align: center;
+}
+
+#backButton {
+    vertical-align: middle;
+}
+
+#favoritesList {
+    margin:           0 !important;
+    border:           0 !important;
+    border-color: rgba(17, 17, 17, 0.09)        !important;
+    background-color: rgba(170, 170, 170, 0.18) !important; 
+    height: 50px !important;
+    vertical-align: middle;   
 }
 
 #favorites {
@@ -68,6 +139,7 @@ h4 {
     height: 0px;
     padding-top: 0px;
     color: blue;
+    border-top: 0px !important;
 }
 
 #stationlist {
