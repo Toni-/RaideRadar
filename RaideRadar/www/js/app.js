@@ -107,13 +107,15 @@ app.factory('sharedProperties', function ($rootScope) {
 });
 
 
-//palauttaa olion kaikista asemista
+// Returns an object with an array of stations from the API
 app.factory("Stations", function($resource) {
-    return $resource("http://rata.digitraffic.fi/api/v1/metadata/stations");
+  return $resource("http://rata.digitraffic.fi/api/v1/metadata/stations");
 });
 
 
-//filtteröi asemataulukkoa käyttäjän syötteen perusteella ja alustaa osumat matches muuttujaan
+
+// Returns a promise of function that filters the array of stations with the users input.
+// This is used for autocompletion of users input in station textfields.
 app.factory('StationHelper', function($q, $timeout) {
 
     var searchStations = function(searchFilter) {
@@ -277,9 +279,9 @@ function setInfoMarkerText(shortCode, stationName) {
       if (selectedStation[train].trainCategory == "Long-distance" ||
           selectedStation[train].trainCategory == "Commuter" ) {
           var temp = "";
-          temp    += "<table class='pure-table'><b><text-e id='train-name'>" + selectedStation[train].trainType + " " +
-                                      selectedStation[train].trainNumber + "</text-e></b>" +
-                 "<thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>";
+          temp += "<table class='pure-table'><b><text-e id='train-name'>" + selectedStation[train].trainType + " " +
+        selectedStation[train].trainNumber + "</text-e></b><b><text-e id='route'> " + selectedStation[train].timeTableRows[0].stationShortCode + "-" +
+        selectedStation[train].timeTableRows[selectedStation[train].timeTableRows.length - 1].stationShortCode + "</text-e></b><thead><tr><th>Saapumis Aika</th><th>Lähtö Aika</th></tr></thead><tbody>";
 
           if (typeof selectedStation[train] != 'undefined' || selectedStation[train] != null) {
             for (var station = 0; station < selectedStation[train].timeTableRows.length; station++) {
@@ -366,6 +368,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
     console.log("scope: documetn! " + $scope.document)
 
 
+  //Call Stations factory and create and array of stations from the object
   Stations.query(function(data) {
 
         for(var i = 0; i<data.length; i = i +1) {
@@ -375,7 +378,9 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
         console.log($scope.stations);
     });
 
-//etsii asemia käyttäjän syötteen perusteella lähtöasema-tekstikenttään
+
+//Calls StationHelper factorys function to search stations based on users input
+//This is used for autocompleting the departure station textfield
   $scope.searchDeparture = function() {
   
   StationHelper.searchStations($scope.data.departure).then(
@@ -387,7 +392,8 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
    ) 
   }
 
-//etsii asemia käyttäjän syötteen perusteella määränpää-tekstikenttään
+//Calls StationHelper factorys function to search stations based on users input
+//This is used for autocompleting the destination station textfield
   $scope.searchDestination = function() {
 
     StationHelper.searchStations($scope.data.destination).then(
@@ -414,90 +420,104 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
   }
 
+  // Called when user clicks desired train.
+  // Fetches information from the clicked train and 
+  // puts them to the screen. Information consist from things
+  // such as departure and arrival time, count of wagons, progess
+  // of the trip and image of the train.
   $scope.trainClicked = function(train, departure, destination) {
 
-    tempDeparture   = departure;
+    tempDeparture = departure;
     tempDestination = destination;
 
 
-// odottaa että tabin html-template on latautunut,
-// jonka jälkeen asettaa junan tiedot html-tiedostoon
+    // odottaa että tabin html-template on latautunut,
+    // jonka jälkeen asettaa junan tiedot html-tiedostoon
+
+    //This "hack" waits for the html to load, and starts excecuting the code 
+    // further after that
     function waitForTabLoading() {
-      if(document.getElementById("timeInfo")==null) {//we want it to match
-        setTimeout(waitForTabLoading, 50);//wait 50 millisecnds then recheck
+      if (document.getElementById("timeInfo") == null) {
+        setTimeout(waitForTabLoading, 50); //wait 50 millisecnds then recheck
         return;
+      }
+
+      document.getElementById("progressBar").innerHTML = ""
+
+
+      console.log("swag:" + destinationShortCode);
+      var detailHTML = '<div class="row">'
+      var progressBarHTML = '<div class="row"><div class="col col-10" id="progress-label" align="center"><p>' + departureShortCode + '</p></div>'
+      var stationRowHTML = '<div class="row" ><div class="col col-50" id="stationRow" align="center">' + departureShortCode + '</div><div class="col col-50" id="stationRow" align="center">' + destinationShortCode + '</div></div>'
+      var departureFound = false;
+
+      var c = 0;
+      for (var i = 0; i < train.timeTableRows.length; i = i + 1) {
+        console.log('timetablerows length' + train.timeTableRows.length);
+
+        //counting and creating the stops and progress for the progressbar
+        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
+          c = c + 1
+          console.log('ewd' + c);
+          progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
+        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
+          progressBarHTML += '<div class="col" id="trainprogressed"></div>'
+          c = c + 1
+          console.log('ii' + c);
+        }
+
+        //creating the times for departure and arrival
+        if (train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type == "DEPARTURE") {
+          console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
+
+          detailHTML = detailHTML + '<div class="col"><h4 align="center">Lähtöaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
+          departureFound = true;
+        } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type == "ARRIVAL") {
+          console.log("destinationFound")
+
+          detailHTML = detailHTML + '<div class="col"><h4 align="center">Saapumisaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
+        }
+        if (i == train.timeTableRows.length - 1) {
+          console.log('yay!');
+          progressBarHTML += '<div class="col col-10" id="progress-label" align="center"><p>' + destinationShortCode + '</p></div></div>'
+
+          document.getElementById("progressBar").innerHTML = progressBarHTML
+        }
+        console.log('i is ' + i);
+      }
+
+
+      if (train.runningCurrently) {
+        document.getElementById("isOnRoute").innerHTML = "<p>Juna ei ole pysähtynyt</p>"
+
+      } else {
+        document.getElementById("isOnRoute").innerHTML = "<p>Juna on pysähtynyt</p>"
+      }
+
+
+
+      document.getElementById("stationRow").innerHTML = stationRowHTML
+
+      //Creating the image of the train.
+      // Fetches the trains composition from the API
+      // so that the wagons can be counted
+      var compPromise = getTrainComposition(train);
+
+      compPromise.then(function(result) {
+        setWagonImages(0)
+        setWagonData(result, setWagonImages)
+      });
+
+
+      document.getElementById("timeInfo").innerHTML = detailHTML + '</div>'
+
     }
 
-    document.getElementById("progressBar").innerHTML = ""
-
-
-    console.log("swag:" + destinationShortCode);
-    var detailHTML = '<div class="row">'
-    var progressBarHTML = '<div class="row"><div class="col col-10" id="progress-label" align="center"><p>' + departureShortCode + '</p></div>'
-    var stationRowHTML = '<div class="row" ><div class="col col-50" id="stationRow" align="center">' + departureShortCode + '</div><div class="col col-50" id="stationRow" align="center">' + destinationShortCode + '</div></div>'
-    var departureFound = false;
-
-    var c = 0;
-    for(var i = 0; i < train.timeTableRows.length; i = i + 1) {
-      console.log('timetablerows length' + train.timeTableRows.length);
-
-      if(!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
-        c = c + 1
-        console.log('ewd' + c);
-        progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
-      } else if($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
-        progressBarHTML += '<div class="col" id="trainprogressed"></div>'
-        c = c + 1
-        console.log('ii' + c);
-      }
-
-      if(train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type =="DEPARTURE") {
-        console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
-
-        detailHTML = detailHTML + '<div class="col"><h3 align="center">Lähtöaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime,true, ":") + '</h1></div>';
-        departureFound = true;
-      } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type =="ARRIVAL") {
-        console.log("destinationFound")
-
-        detailHTML = detailHTML + '<div class="col"><h3 align="center">Saapumisaika: </h3><h1 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h1></div>';
-      }
-      if(i == train.timeTableRows.length-1) {
-        console.log('yay!');
-        progressBarHTML += '<div class="col col-10" id="progress-label" align="center"><p>' + destinationShortCode + '</p></div></div>'
-
-      document.getElementById("progressBar").innerHTML = progressBarHTML
-      }
-      console.log('i is ' + i);
-   }
-
-
-   if(train.runningCurrently) {
-    document.getElementById("isOnRoute").innerHTML = "<p>Juna ei ole pysähtynyt</p>"
-    
-   } else {
-    document.getElementById("isOnRoute").innerHTML = "<p>Juna on pysähtynyt</p>"
-   }
-
-  
-
-  document.getElementById("stationRow").innerHTML = stationRowHTML
-
-  var compPromise = getTrainComposition(train);
-
-  compPromise.then(function(result) {
-    setWagonImages(0)
-    setWagonData(result, setWagonImages)
-  });
-
-
-  document.getElementById("timeInfo").innerHTML = detailHTML + '</div>'
+    waitForTabLoading();
 
   }
 
-  waitForTabLoading();
-
-}
-
+//Fetches the trains composition from the API
 getTrainComposition = function(train) {
 
   var temp = {};
@@ -510,6 +530,9 @@ getTrainComposition = function(train) {
     return defer.promise;
 }
 
+// Counts the wagons of the train and lays some 
+// info of the wagons to the screen, then calls a 
+// method that draws the train based on the count of wagons
 setWagonData = function(data, callback) {
   document.getElementById("wagonDesc").innerHTML = "";
 
@@ -562,7 +585,7 @@ setWagonData = function(data, callback) {
 }
 
 
-
+//Draws the wagons to the screen
 setWagonImages = function(wagonCount) {
 
   
@@ -595,7 +618,8 @@ $scope.toTimeChanged = function() {
 }
 
 
-//kutsutaan kun käyttäjä valitsee aseman listasta
+// Puts the clicked stations from the list to the textfield
+// and saves the stations shortcodes for future use
   $scope.stationItemClicked = function(station) {
 
   //valittu asema tekstikenttään
@@ -632,65 +656,62 @@ $scope.toTimeChanged = function() {
         tempDepShortCode, tempDestination, tempDestShortCode);
   }
 
-//kutsutaan kun hae junat-painiketta painetaan.
-//tekee rajapintapyynnön asemien tunnuskoodien avulla
+// Called when the search button is clicked
+// Fetches trains that travel the route of the user 
+// selected stations from the API in selected time frame
   $scope.searchForTrains = function(station) {
 
   $scope.showFavoriteButton = true;
   var queryString = '';
 
-  if(document.getElementById('fromTime').value != "") {
-    console.log("fromtime" + document.getElementById('fromTime').value)
-    queryString += '&from=' + document.getElementById('fromTime').value + ':00.000Z';
-  } else {
-    queryString += '&from=' + getTimeWithThreshold().toString();
-    console.log("date with threshold:" + queryString);
-  }
-
-  if(document.getElementById('toTime').value != "" && document.getElementById('toTime').value != "") {
-    console.log("totime" + document.getElementById('toTime').value)
-    queryString += '&to=' +document.getElementById('toTime').value + ':00.000Z';
-  }
-
-  $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station='+ departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
-    
-    console.log(data)
-    console.log(data.code)
-
-    if(data.code != "TRAIN_NOT_FOUND") {
-    $scope.data.trains = data;
-
-
-    for(var j = 0;j<$scope.data.trains.length;j = j +1) {
-
-
-      for(var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
-        if($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type =="DEPARTURE") {
-
-          $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
-          $scope.data.trains[j].date = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, false, ".");
-
-        } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type =="ARRIVAL") {
-
-          $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
-        }
-        }
+    if (document.getElementById('fromTime').value != "") {
+      console.log("fromtime" + document.getElementById('fromTime').value)
+      queryString += '&from=' + getTimeWithThreshold(document.getElementById('fromTime').value.replace(/-/g, '/').replace('T', ' '));
+    } else {
+      queryString += '&from=' + getTimeWithThreshold(new Date()).toString();
+      console.log("date with threshold:" + queryString);
     }
 
-    if($scope.data.trains != null) {
-      trainsFound = true;
+    if (document.getElementById('toTime').value != "" && document.getElementById('toTime').value != "") {
+      console.log("totime" + document.getElementById('toTime').value)
+      queryString += '&to=' + getTimeWithThreshold(document.getElementById('toTime').value.replace(/-/g, '/').replace('T', ' '));
     }
+    console.log("querystring: " + queryString);
+    $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station=' + departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
 
-  } else {
-      var alertPopup = $ionicPopup.alert({
-        title: "Virhe",
-        template: "Junia ei löytynyt... Tarkista syöte ja huomioi, että haku ei tällä hetkellä tue jatkoyhteyksiä."
-      });
-        alertPopup.then(function(res) {
-      });
-  }
+      console.log(data)
+      console.log(data.code)
 
-  });
+      if (data.code != "TRAIN_NOT_FOUND") {
+        $scope.data.trains = data;
+
+
+        for (var j = 0; j < $scope.data.trains.length; j = j + 1) {
+
+
+          for (var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
+            if ($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type == "DEPARTURE") {
+
+              $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
+              $scope.data.trains[j].date = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, false, ".");
+
+            } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type == "ARRIVAL") {
+
+              $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
+            }
+          }
+        }
+
+        if ($scope.data.trains != null) {
+          trainsFound = true;
+          console.log("flalflöfalöaflöfalöföafffafa");
+        }
+
+      } else {
+        alert("Hei! Junia ei löytynyt... Tarkista syöte ja huomioi, että Junatutka ei tällä hetkellä tue jatkoyhteyksiä.")
+      }
+
+    });
   }
 
 
@@ -823,9 +844,10 @@ app.controller("DBCtrl", ['$scope', '$cordovaSQLite', 'sharedProperties', '$ioni
     }
 }]);
 
-function getTimeWithThreshold() {
+// Returns a date string with semi-hardcoded threshold
+function getTimeWithThreshold(date) {
 
-  var d = new Date()
+  var d = new Date(date)
   var year = '';
   var month = '';
   var day = '';
@@ -834,46 +856,46 @@ function getTimeWithThreshold() {
   var seconds = '';
   var millis = '';
 
-  d.setHours(d.getHours()-3);
-    
-    year = d.getFullYear().toString();
-    
-    if(d.getMonth()<10) {
-      month = '0' + (d.getMonth()+1).toString();
-    } else {
-      month = (d.getMonth()+1).toString();
-    }
-    if(d.getDate()<10) {
-      day = '0' + d.getDate().toString();
-    } else {
-      day = d.getDate().toString();
-    }
-    if(d.getHours()<10) {
-      hours = '0' + d.getHours().toString();
-    } else {
-      hours = d.getHours().toString();
-    }
+  d.setHours(d.getHours() - 3);
 
-    if(d.getMinutes()<10) {
-      minutes = '0' + d.getMinutes().toString();
-    } else {
-      minutes = d.getMinutes().toString();
-    }
+  year = d.getFullYear().toString();
 
-   
-    seconds = d.getMinutes().toString();
-    
+  if (d.getMonth() < 10) {
+    month = '0' + (d.getMonth() + 1).toString();
+  } else {
+    month = (d.getMonth() + 1).toString();
+  }
+  if (d.getDate() < 10) {
+    day = '0' + d.getDate().toString();
+  } else {
+    day = d.getDate().toString();
+  }
+  if (d.getHours() < 10) {
+    hours = '0' + d.getHours().toString();
+  } else {
+    hours = d.getHours().toString();
+  }
 
-    if(d.getMilliseconds()<10) {
-      millis = '00' + d.getMilliseconds().toString();
-    } else if(d.getMilliseconds()<100) {
-      millis = '0' + d.getMilliseconds().toString();
-    }else {
-      millis = d.getMilliseconds().toString();
-    }
+  if (d.getMinutes() < 10) {
+    minutes = '0' + d.getMinutes().toString();
+  } else {
+    minutes = d.getMinutes().toString();
+  }
 
-    var returntime = year + "-" + month + '-' + day + 'T' + hours + ':' + minutes + ':' + seconds + '.' + millis + 'Z'
-    return returntime;
+
+  seconds = d.getMinutes().toString();
+
+
+  if (d.getMilliseconds() < 10) {
+    millis = '00' + d.getMilliseconds().toString();
+  } else if (d.getMilliseconds() < 100) {
+    millis = '0' + d.getMilliseconds().toString();
+  } else {
+    millis = d.getMilliseconds().toString();
+  }
+
+  var returntime = year + "-" + month + '-' + day + 'T' + hours + ':' + minutes + ':' + seconds + '.' + millis + 'Z'
+  return returntime;
 
 }
 
