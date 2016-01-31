@@ -356,6 +356,7 @@ function sortOutput(a, b) {
 app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', 'sharedProperties', '$ionicPopup', function($scope, $http, $q, Stations, StationHelper, sharedProperties, $ionicPopup) {
   
   $scope.addedToFavorites = false;
+  $scope.loading = false;
 
   $scope.data = { "stations" : [], "search" : '', "isDestination" : false };
   var destinationEdited = false;
@@ -452,18 +453,27 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
       var progressBarHTML = '<div class="row"><div class="col col-10" id="progress-label" align="center"><p>' + departureShortCode + '</p></div>'
       var stationRowHTML = '<div class="row" ><div class="col col-50" id="stationRow" align="center">' + departureShortCode + '</div><div class="col col-50" id="stationRow" align="center">' + destinationShortCode + '</div></div>'
       var departureFound = false;
+      var arrivalFound = 0;
 
       var c = 0;
       for (var i = 0; i < train.timeTableRows.length; i = i + 1) {
         console.log('timetablerows length' + train.timeTableRows.length);
 
         //counting and creating the stops and progress for the progressbar
-        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
+        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "ARRIVAL" && departureFound && arrivalFound < 2) {
+
+          if(arrivalFound == 1) {
+            arrivalFound = 2;
+          }
           c = c + 1
           console.log('ewd' + c);
-          progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
-        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
-          progressBarHTML += '<div class="col" id="trainprogressed"></div>'
+          progressBarHTML += '<div class="col" id="trainnotprogressed">' + train.timeTableRows[i].stationShortCode + '</div>'
+        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "ARRIVAL" && departureFound && arrivalFound < 2 ) {
+          progressBarHTML += '<div class="col" id="trainprogressed">' + train.timeTableRows[i].stationShortCode + '</div>'
+          if(arrivalFound == 1) {
+            arrivalFound = 2;
+          }
+          
           c = c + 1
           console.log('ii' + c);
         }
@@ -476,7 +486,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
           departureFound = true;
         } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type == "ARRIVAL") {
           console.log("destinationFound")
-
+          arrivalFound = 1;
           detailHTML = detailHTML + '<div class="col"><h4 align="center">Saapumisaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
         }
         if (i == train.timeTableRows.length - 1) {
