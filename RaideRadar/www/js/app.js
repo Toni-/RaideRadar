@@ -406,6 +406,8 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
   }
 
 
+// Compares if the parameter date object is in the past
+// or in the future
   $scope.isTimePassed = function(dateToCompare) {
 
     var currentTime = new Date();
@@ -659,8 +661,8 @@ $scope.toTimeChanged = function() {
 // Called when the search button is clicked
 // Fetches trains that travel the route of the user 
 // selected stations from the API in selected time frame
-  $scope.searchForTrains = function(station) {
-
+  $scope.searchForTrains = function() {
+  $scope.loading = true;
   $scope.showFavoriteButton = true;
   var queryString = '';
 
@@ -704,7 +706,7 @@ $scope.toTimeChanged = function() {
 
         if ($scope.data.trains != null) {
           trainsFound = true;
-          console.log("flalflöfalöaflöfalöföafffafa");
+          $scope.loading = false;
         }
 
       } else {
