@@ -467,9 +467,9 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
           }
           c = c + 1
           console.log('ewd' + c);
-          progressBarHTML += '<div class="col" id="trainnotprogressed">' + train.timeTableRows[i].stationShortCode + '</div>'
+          progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
         } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "ARRIVAL" && departureFound && arrivalFound < 2 ) {
-          progressBarHTML += '<div class="col" id="trainprogressed">' + train.timeTableRows[i].stationShortCode + '</div>'
+          progressBarHTML += '<div class="col" id="trainprogressed"></div>'
           if(arrivalFound == 1) {
             arrivalFound = 2;
           }
