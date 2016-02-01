@@ -460,7 +460,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
         console.log('timetablerows length' + train.timeTableRows.length);
 
         //counting and creating the stops and progress for the progressbar
-        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "ARRIVAL" && departureFound && arrivalFound < 2) {
+        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "DEPARTURE" && departureFound && arrivalFound < 2) {
 
           if(arrivalFound == 1) {
             arrivalFound = 2;
@@ -468,7 +468,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
           c = c + 1
           console.log('ewd' + c);
           progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
-        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "ARRIVAL" && departureFound && arrivalFound < 2 ) {
+        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "DEPARTURE" && departureFound && arrivalFound < 2 ) {
           progressBarHTML += '<div class="col" id="trainprogressed"></div>'
           if(arrivalFound == 1) {
             arrivalFound = 2;
