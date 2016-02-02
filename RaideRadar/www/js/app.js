@@ -695,36 +695,52 @@ $scope.toTimeChanged = function() {
       console.log(data.code)
 
       if (data.code != "TRAIN_NOT_FOUND") {
-        $scope.data.trains = data;
+        var tempTrains = data;
+        var departureFound = false;
+        var arrivalFound = false;
+        $scope.loading = false;
 
+        for (var j = 0; j <tempTrains.length; j = j + 1) {
 
-        for (var j = 0; j < $scope.data.trains.length; j = j + 1) {
+          console.log("woop")
+          for (var i = 0; i < tempTrains[j].timeTableRows.length; i = i + 1) {
 
+            if (tempTrains[j].timeTableRows[i].stationShortCode == departureShortCode && tempTrains[j].timeTableRows[i].type == "DEPARTURE" && !departureFound) {
 
-          for (var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
-            if ($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type == "DEPARTURE") {
+              tempTrains[j].depTime = formatDateToString(tempTrains[j].timeTableRows[i].scheduledTime, true, ":");
+              tempTrains[j].date = formatDateToString(tempTrains[j].timeTableRows[i].scheduledTime, false, ".");
+              departureFound = true;
 
-              $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
-              $scope.data.trains[j].date = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, false, ".");
+            } else if (tempTrains[j].timeTableRows[i].stationShortCode == destinationShortCode && tempTrains[j].timeTableRows[i].type == "ARRIVAL" && departureFound) {
+              
+              tempTrains[j].desTime = formatDateToString(tempTrains[j].timeTableRows[i].scheduledTime, true, ":");
+              arrivalFound = true;
 
-            } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type == "ARRIVAL") {
-
-              $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
             }
           }
+        if(arrivalFound == false) {
+          tempTrains.splice(j, 1);
+          j = j - 1
         }
 
+        departureFound = false;
+        arrivalFound = false;
+
+        //Propably unnecessary, functionality unknown
         if ($scope.data.trains != null) {
           trainsFound = true;
-          $scope.loading = false;
         }
+      }
+
+      $scope.data.trains = tempTrains;
 
       } else {
+        $scope.loading = false;
         alert("Hei! Junia ei löytynyt... Tarkista syöte ja huomioi, että Junatutka ei tällä hetkellä tue jatkoyhteyksiä.")
       }
 
     });
-  }
+}
 
 
 }]);
