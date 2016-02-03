@@ -78,6 +78,13 @@ th {
     width: 100%;
 }
 
+#train-list-load {
+    margin: 0 auto;
+    text-align:center;
+    vertical-align: middle;
+    position:relative;
+}
+
 .scroll {
   height: 100%;
 }

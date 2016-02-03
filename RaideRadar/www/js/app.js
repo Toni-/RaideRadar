@@ -356,6 +356,7 @@ function sortOutput(a, b) {
 app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHelper', 'sharedProperties', '$ionicPopup', function($scope, $http, $q, Stations, StationHelper, sharedProperties, $ionicPopup) {
   
   $scope.addedToFavorites = false;
+  $scope.loading = false;
 
   $scope.data = { "stations" : [], "search" : '', "isDestination" : false };
   var destinationEdited = false;
@@ -406,6 +407,8 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
   }
 
 
+// Compares if the parameter date object is in the past
+// or in the future
   $scope.isTimePassed = function(dateToCompare) {
 
     var currentTime = new Date();
@@ -450,18 +453,27 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
       var progressBarHTML = '<div class="row"><div class="col col-10" id="progress-label" align="center"><p>' + departureShortCode + '</p></div>'
       var stationRowHTML = '<div class="row" ><div class="col col-50" id="stationRow" align="center">' + departureShortCode + '</div><div class="col col-50" id="stationRow" align="center">' + destinationShortCode + '</div></div>'
       var departureFound = false;
+      var arrivalFound = 0;
 
       var c = 0;
       for (var i = 0; i < train.timeTableRows.length; i = i + 1) {
         console.log('timetablerows length' + train.timeTableRows.length);
 
         //counting and creating the stops and progress for the progressbar
-        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
+        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "DEPARTURE" && departureFound && arrivalFound < 2) {
+
+          if(arrivalFound == 1) {
+            arrivalFound = 2;
+          }
           c = c + 1
           console.log('ewd' + c);
           progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
-        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound) {
+        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "DEPARTURE" && departureFound && arrivalFound < 2 ) {
           progressBarHTML += '<div class="col" id="trainprogressed"></div>'
+          if(arrivalFound == 1) {
+            arrivalFound = 2;
+          }
+          
           c = c + 1
           console.log('ii' + c);
         }
@@ -470,12 +482,12 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
         if (train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type == "DEPARTURE") {
           console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
 
-          detailHTML = detailHTML + '<div class="col"><h4 align="center">Lähtöaika </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
+          detailHTML = detailHTML + '<div class="col"><h4 align="center">Lähtöaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
           departureFound = true;
         } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type == "ARRIVAL") {
           console.log("destinationFound")
-
-          detailHTML = detailHTML + '<div class="col"><h4 align="center">Saapumisaika </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
+          arrivalFound = 1;
+          detailHTML = detailHTML + '<div class="col"><h4 align="center">Saapumisaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
         }
         if (i == train.timeTableRows.length - 1) {
           console.log('yay!');
@@ -659,8 +671,8 @@ $scope.toTimeChanged = function() {
 // Called when the search button is clicked
 // Fetches trains that travel the route of the user 
 // selected stations from the API in selected time frame
-  $scope.searchForTrains = function(station) {
-
+  $scope.searchForTrains = function() {
+  $scope.loading = true;
   $scope.showFavoriteButton = true;
   var queryString = '';
 
@@ -683,36 +695,52 @@ $scope.toTimeChanged = function() {
       console.log(data.code)
 
       if (data.code != "TRAIN_NOT_FOUND") {
-        $scope.data.trains = data;
+        var tempTrains = data;
+        var departureFound = false;
+        var arrivalFound = false;
+        $scope.loading = false;
 
+        for (var j = 0; j <tempTrains.length; j = j + 1) {
 
-        for (var j = 0; j < $scope.data.trains.length; j = j + 1) {
+          console.log("woop")
+          for (var i = 0; i < tempTrains[j].timeTableRows.length; i = i + 1) {
 
+            if (tempTrains[j].timeTableRows[i].stationShortCode == departureShortCode && tempTrains[j].timeTableRows[i].type == "DEPARTURE" && !departureFound) {
 
-          for (var i = 0; i < $scope.data.trains[j].timeTableRows.length; i = i + 1) {
-            if ($scope.data.trains[j].timeTableRows[i].stationShortCode == departureShortCode && $scope.data.trains[j].timeTableRows[i].type == "DEPARTURE") {
+              tempTrains[j].depTime = formatDateToString(tempTrains[j].timeTableRows[i].scheduledTime, true, ":");
+              tempTrains[j].date = formatDateToString(tempTrains[j].timeTableRows[i].scheduledTime, false, ".");
+              departureFound = true;
 
-              $scope.data.trains[j].depTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
-              $scope.data.trains[j].date = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, false, ".");
+            } else if (tempTrains[j].timeTableRows[i].stationShortCode == destinationShortCode && tempTrains[j].timeTableRows[i].type == "ARRIVAL" && departureFound) {
+              
+              tempTrains[j].desTime = formatDateToString(tempTrains[j].timeTableRows[i].scheduledTime, true, ":");
+              arrivalFound = true;
 
-            } else if ($scope.data.trains[j].timeTableRows[i].stationShortCode == destinationShortCode && $scope.data.trains[j].timeTableRows[i].type == "ARRIVAL") {
-
-              $scope.data.trains[j].desTime = formatDateToString($scope.data.trains[j].timeTableRows[i].scheduledTime, true, ":");
             }
           }
+        if(arrivalFound == false) {
+          tempTrains.splice(j, 1);
+          j = j - 1
         }
 
+        departureFound = false;
+        arrivalFound = false;
+
+        //Propably unnecessary, functionality unknown
         if ($scope.data.trains != null) {
           trainsFound = true;
-          console.log("flalflöfalöaflöfalöföafffafa");
         }
+      }
+
+      $scope.data.trains = tempTrains;
 
       } else {
+        $scope.loading = false;
         alert("Hei! Junia ei löytynyt... Tarkista syöte ja huomioi, että Junatutka ei tällä hetkellä tue jatkoyhteyksiä.")
       }
 
     });
-  }
+}
 
 
 }]);
