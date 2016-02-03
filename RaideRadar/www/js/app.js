@@ -125,7 +125,7 @@ app.factory('StationHelper', function($q, $timeout) {
         var deferred = $q.defer();
 
       var matches = stations.filter( function(station) {
-        if(station.stationName.toLowerCase().indexOf(searchFilter.toLowerCase()) !== -1 ) {
+        if(station.stationName.toLowerCase().indexOf(searchFilter.toLowerCase()) == 0 ) {
           //console.log("found!")
           return true;
         }
@@ -386,6 +386,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
   
   StationHelper.searchStations($scope.data.departure).then(
     function(matches) {
+
       $scope.data.stations = matches;
       destinationEdited = false;
       console.log(matches[0].stationName)
@@ -432,7 +433,7 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
 
     tempDeparture = departure;
     tempDestination = destination;
-
+    console.log(train);
 
     // odottaa että tabin html-template on latautunut,
     // jonka jälkeen asettaa junan tiedot html-tiedostoon
@@ -448,54 +449,71 @@ app.controller("ScheduleCtrl", ['$scope', '$http', '$q', 'Stations', 'StationHel
       document.getElementById("progressBar").innerHTML = ""
 
 
-      console.log("swag:" + destinationShortCode);
+      console.log("destination short code:" + destinationShortCode);
       var detailHTML = '<div class="row">'
       var progressBarHTML = '<div class="row"><div class="col col-10" id="progress-label" align="center"><p>' + departureShortCode + '</p></div>'
       var stationRowHTML = '<div class="row" ><div class="col col-50" id="stationRow" align="center">' + departureShortCode + '</div><div class="col col-50" id="stationRow" align="center">' + destinationShortCode + '</div></div>'
-      var departureFound = false;
+      var departureFound = 0;
       var arrivalFound = 0;
+      var tempShortCode = ""
 
       var c = 0;
       for (var i = 0; i < train.timeTableRows.length; i = i + 1) {
         console.log('timetablerows length' + train.timeTableRows.length);
 
-        //counting and creating the stops and progress for the progressbar
-        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "DEPARTURE" && departureFound && arrivalFound < 2) {
 
-          if(arrivalFound == 1) {
-            arrivalFound = 2;
-          }
-          c = c + 1
-          console.log('ewd' + c);
-          progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
-        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && train.timeTableRows[i].type == "DEPARTURE" && departureFound && arrivalFound < 2 ) {
-          progressBarHTML += '<div class="col" id="trainprogressed"></div>'
-          if(arrivalFound == 1) {
-            arrivalFound = 2;
-          }
-          
-          c = c + 1
-          console.log('ii' + c);
-        }
 
         //creating the times for departure and arrival
         if (train.timeTableRows[i].stationShortCode == departureShortCode && train.timeTableRows[i].type == "DEPARTURE") {
           console.log("lähtöaika: " + train.timeTableRows[i].scheduledTime)
 
           detailHTML = detailHTML + '<div class="col"><h4 align="center">Lähtöaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
-          departureFound = true;
+          departureFound = 1;
         } else if (train.timeTableRows[i].stationShortCode == destinationShortCode && train.timeTableRows[i].type == "ARRIVAL") {
-          console.log("destinationFound")
+          console.log("destinationFoundOMGMGMGMG")
           arrivalFound = 1;
           detailHTML = detailHTML + '<div class="col"><h4 align="center">Saapumisaika: </h4><h2 align="center">' + formatDateToString(train.timeTableRows[i].scheduledTime, true, ":") + '</h2></div>';
+          if (i == train.timeTableRows.length - 1) {
+
+
+          }
         }
+
+                //counting and creating the stops and progress for the progressbar
+        if (!$scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound > 1 && arrivalFound < 2 && train.timeTableRows[i].stationShortCode != tempShortCode) {
+          console.log("we here arrival found not progerssed")
+         
+          c = c + 1
+          progressBarHTML += '<div class="col" id="trainnotprogressed"></div>'
+
+        } else if ($scope.isTimePassed(train.timeTableRows[i].scheduledTime) && train.timeTableRows[i].commercialStop && departureFound > 1 && arrivalFound < 2 && train.timeTableRows[i].stationShortCode != tempShortCode) {
+          console.log("we here arrival found progressed")
+          
+      
+          c = c + 1
+          progressBarHTML += '<div class="col" id="trainprogressed"></div>'
+        }
+
+        if(departureFound == 1) {
+          departureFound = 2
+        }
+
+        if(arrivalFound == 1) {
+            arrivalFound = 2;
+        }
+
+        tempShortCode = train.timeTableRows[i].stationShortCode
+
+
+
         if (i == train.timeTableRows.length - 1) {
           console.log('yay!');
           progressBarHTML += '<div class="col col-10" id="progress-label" align="center"><p>' + destinationShortCode + '</p></div></div>'
 
           document.getElementById("progressBar").innerHTML = progressBarHTML
         }
-        console.log('i is ' + i);
+
+        console.log("stops found:" + c);
       }
 
 
@@ -691,8 +709,8 @@ $scope.toTimeChanged = function() {
     console.log("querystring: " + queryString);
     $http.get('http://rata.digitraffic.fi/api/v1/schedules?departure_station=' + departureShortCode + '&arrival_station=' + destinationShortCode + queryString + '&limit=20').success(function(data) {
 
-      console.log(data)
-      console.log(data.code)
+   /*   console.log(data)
+      console.log(data.code)*/
 
       if (data.code != "TRAIN_NOT_FOUND") {
         var tempTrains = data;
@@ -702,7 +720,7 @@ $scope.toTimeChanged = function() {
 
         for (var j = 0; j <tempTrains.length; j = j + 1) {
 
-          console.log("woop")
+          
           for (var i = 0; i < tempTrains[j].timeTableRows.length; i = i + 1) {
 
             if (tempTrains[j].timeTableRows[i].stationShortCode == departureShortCode && tempTrains[j].timeTableRows[i].type == "DEPARTURE" && !departureFound) {
